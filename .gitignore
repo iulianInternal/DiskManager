@@ -1,0 +1,10 @@
+# Visual Studio
+*.vcxproj
+*.filters
+*.user
+Debug
+x86
+x64
+
+# Others
+TestFolder
