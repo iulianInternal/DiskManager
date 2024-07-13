@@ -17,7 +17,7 @@ std::vector<std::string> getArgs(const char* args)
 			break;
 		if (*args == '"')
 		{
-			flag1 = not flag1;
+			flag1 = !flag1;
 			++args;
 			continue;
 		}
