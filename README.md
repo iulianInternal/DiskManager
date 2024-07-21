@@ -5,24 +5,23 @@ Currently supports only FAT12 file system.
 
 Compiling the program
 ---------------------
-For Windows you need compatible C++17 and higher compiler.  
+You need a compatible C++17 and higher compiler.  
 List of C++ compilers: 
 |Supported|Name|
 |---------|----|
 |&check;|[msvc++](https://visualstudio.microsoft.com/)|
-|not tested|[g++](https://gcc.gnu.org/)|
-|not tested|[clang](https://clang.llvm.org/)|
+|&cross;|[g++](https://gcc.gnu.org/)|
+|&cross;|[clang](https://clang.llvm.org/)|
 |&cross;|[mingw-w64](https://www.mingw-w64.org/)|
 
-You also need a [**CMake**](https://cmake.org/) to build a project.
+You also need a [**CMake**](https://cmake.org/) to build and compile a project.
 
 Clone repository first, and then use CMake to build project.
 
     git clone https://github.com/iulianInternal/DiskManager.git
     cmake .
     
-Then compile project with installed compatible C++17 compiler.  
-Or you can use CMake to build it for you:
+Then compile project with installed compatible C++17 compiler:
 
     cmake --build .
 

@@ -5,17 +5,17 @@ struct DirectoryEntry
 {
 	std::string name = "";
 	std::string extension = "";
-	unsigned __int8 fileAttributes = 0;
-	unsigned __int8 userAttributes = 0;
-	unsigned __int8 firstCharacterOfDeletedFile = 0;
-	unsigned __int16 passwordHash = 0;
-	unsigned __int16 recordSize = 0;
-	unsigned __int16 ownerID = 0;
-	unsigned __int16 fileAccessRightsBitmap = 0;
-	unsigned __int16 lastModifiedTime = 0;
-	unsigned __int16 lastModifiedDate = 0;
-	unsigned __int16 clusterStart = 0;
-	unsigned __int32 fileSize = 0;
+	unsigned char fileAttributes = 0;
+	unsigned char userAttributes = 0;
+	unsigned char firstCharacterOfDeletedFile = 0;
+	unsigned short passwordHash = 0;
+	unsigned short recordSize = 0;
+	unsigned short ownerID = 0;
+	unsigned short fileAccessRightsBitmap = 0;
+	unsigned short lastModifiedTime = 0;
+	unsigned short lastModifiedDate = 0;
+	unsigned short clusterStart = 0;
+	unsigned int fileSize = 0;
 };
 
 unsigned int GetFreeCluster(std::fstream* disk, unsigned int firstAddressOfFAT);

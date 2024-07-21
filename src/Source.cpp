@@ -207,14 +207,14 @@ int main(int argc, char* argv[])
 	unsigned int offset = 0;
 
 	unsigned char OEMName[9];
-	unsigned __int16 bytesPerLogicalSector;
-	unsigned __int8 logicalSectorPerCluster;
-	unsigned __int16 reservedLogicalSectors;
-	unsigned __int8 numberOfFAT;
-	unsigned __int16 maxNumberOfFAT;
-	unsigned __int16 totalLogicalSector;
-	unsigned __int8 mediaDescriptor;
-	unsigned __int16 logicalSectorPerFAT;
+	unsigned short bytesPerLogicalSector;
+	unsigned char logicalSectorPerCluster;
+	unsigned short reservedLogicalSectors;
+	unsigned char numberOfFAT;
+	unsigned short maxNumberOfFAT;
+	unsigned short totalLogicalSector;
+	unsigned char mediaDescriptor;
+	unsigned short logicalSectorPerFAT;
 
 	disk.read((char*)bytes, 3);
 
@@ -307,7 +307,7 @@ int main(int argc, char* argv[])
 				else if (directoryEntry.name[0] == 0xE5)
 					continue;
 
-				unsigned __int8 hour, minute, second;
+				unsigned char hour, minute, second;
 				std::string lastModifiedTimeString;
 				hour = directoryEntry.lastModifiedTime >> 11;
 				minute = (directoryEntry.lastModifiedTime % 2048) >> 5;
@@ -322,7 +322,7 @@ int main(int argc, char* argv[])
 					lastModifiedTimeString.append("0");
 				lastModifiedTimeString.append(std::to_string(second * 2));
 
-				unsigned __int16 year, month, day = 0;
+				unsigned short year, month, day = 0;
 				std::string lastModifiedDateString;
 				year = directoryEntry.lastModifiedDate >> 9;
 				month = (directoryEntry.lastModifiedDate % 512) >> 5;
@@ -414,7 +414,7 @@ int main(int argc, char* argv[])
 				{
 					std::string namePath = "";
 					std::string directoryPath;
-					std::vector<unsigned __int32> exitStack;
+					std::vector<unsigned int> exitStack;
 
 					unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
 
