@@ -5,6 +5,13 @@
 #include <filesystem>
 #include <vector>
 
+//Some OS has unique set of byte to correspond as a folder path.
+#ifdef __linux__
+#define FILESYSTEM_FOLDER_PATH_SYMBOL '/'
+#elif defined(_WIN32) || defined(_WIN64)
+#define FILESYSTEM_FOLDER_PATH_SYMBOL '\\'
+#endif
+
 std::vector<std::string> getArgs(const char* args)
 {
 	std::vector<std::string> arguments;
@@ -410,7 +417,11 @@ int main(int argc, char* argv[])
 			if (arguments.size() == 2)
 			{
 				//If copying from img to disk
+#ifdef __linux__
+				if (arguments[1][0] == '/')
+#elif defined(_WIN32) || defined(_WIN64)
 				if (arguments[1][1] == ':')
+#endif
 				{
 					std::string namePath = "";
 					std::string directoryPath;
@@ -459,7 +470,7 @@ int main(int argc, char* argv[])
 
 							if ((directoryEntry.fileAttributes & 0x10) == 0x10)
 							{
-								namePath.append("\\").append(nameString);
+								namePath.append(1, FILESYSTEM_FOLDER_PATH_SYMBOL).append(nameString);
 								directoryPath.append(namePath);
 								bool create = std::filesystem::create_directory(directoryPath);
 								std::cout << namePath << std::endl;
@@ -475,7 +486,7 @@ int main(int argc, char* argv[])
 							else
 							{
 								std::string nameFileString = namePath;
-								nameFileString.append("\\").append(nameString).append(".").append(extensionString);
+								nameFileString.append(1, FILESYSTEM_FOLDER_PATH_SYMBOL).append(nameString).append(".").append(extensionString);
 
 								std::string nameFile = directoryPath;
 								nameFile.append(nameFileString);
@@ -521,12 +532,16 @@ int main(int argc, char* argv[])
 					}
 				}
 				//If copying from disk to img
+#ifdef __linux__
+				if (arguments[1][0] == '/')
+#elif defined(_WIN32) || defined(_WIN64)
 				else if(arguments[0][1] == ':')
+#endif
 				{
 					if (!std::filesystem::is_directory(arguments[0]))
 					{
 						std::string fileNameWithExtension = arguments[0];
-						fileNameWithExtension.erase(0, fileNameWithExtension.rfind("\\") + 1);
+						fileNameWithExtension.erase(0, fileNameWithExtension.rfind(FILESYSTEM_FOLDER_PATH_SYMBOL) + 1);
 						std::string fileName = fileNameWithExtension;
 						if (fileNameWithExtension.rfind(".") != std::string::npos)
 							fileName.erase(fileNameWithExtension.rfind("."));
