@@ -1,6 +1,6 @@
 # DiskManager
 
-A program that allows access to read/write raw image files of diskette.  
+A program that allows to read/write raw image files of a diskette.  
 Currently supports only FAT12 file system.
 
 Compiling the program
@@ -10,9 +10,9 @@ List of C++ compilers:
 |Supported|Name|
 |---------|----|
 |&check;|[msvc++](https://visualstudio.microsoft.com/)|
-|&cross;|[g++](https://gcc.gnu.org/)|
+|&check;|[g++](https://gcc.gnu.org/)|
 |&cross;|[clang](https://clang.llvm.org/)|
-|&cross;|[mingw-w64](https://www.mingw-w64.org/)|
+|&check;|[mingw-w64](https://www.mingw-w64.org/)|
 
 You also need a [**CMake**](https://cmake.org/) to build and compile a project.
 

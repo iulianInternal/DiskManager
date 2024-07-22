@@ -52,7 +52,7 @@ unsigned int GetFreeCluster(std::fstream* disk, unsigned int firstAddressOfFAT)
 {
 	unsigned int result = 2;
 	unsigned char bytes[2];
-	disk->clear(std::ios::beg);
+	disk->clear(std::ios_base::goodbit);
 	unsigned int oldAddress = disk->tellg();
 	while (result != 511)
 	{
@@ -79,7 +79,7 @@ unsigned int GetFreeCluster(std::fstream* disk, unsigned int firstAddressOfFAT)
 void WriteClusterChain(std::fstream* disk, unsigned int firstAddressOfFAT, unsigned int cluster, unsigned int value)
 {
 	unsigned char bytes[2];
-	disk->clear(std::ios::beg);
+	disk->clear(std::ios_base::goodbit);
 	unsigned int oldAddress = disk->tellg();
 	disk->seekg(firstAddressOfFAT + cluster * 3 / 2);
 	disk->read((char*)bytes, 2);
@@ -102,7 +102,7 @@ unsigned int GetClusterChain(std::fstream* disk, unsigned int firstAddressOfFAT,
 {
 	unsigned char bytes[2];
 	unsigned int result;
-	disk->clear(std::ios::beg);
+	disk->clear(std::ios_base::goodbit);
 	unsigned int oldAddress = disk->tellg();
 	disk->seekg(firstAddressOfFAT + cluster * 3 / 2);
 	disk->read((char*)bytes, 2);

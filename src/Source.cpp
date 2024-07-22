@@ -292,7 +292,7 @@ int main(int argc, char* argv[])
 			std::getline(std::cin, command);
 		std::cout << std::endl;
 
-		disk.clear(std::ios::beg);
+		disk.clear(std::ios_base::goodbit);
 
 		if (command.rfind("dir", 3) != std::string::npos)
 		{
@@ -511,7 +511,7 @@ int main(int argc, char* argv[])
 											break;
 									}
 									file.close();
-									disk.clear(std::ios::beg);
+									disk.clear(std::ios_base::goodbit);
 									disk.seekg(oldAddress);
 								}
 								file.close();
