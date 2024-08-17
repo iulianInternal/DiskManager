@@ -5,6 +5,7 @@
 Debug
 x86
 x64
+*.aps
 
 # Others
 TestFolder

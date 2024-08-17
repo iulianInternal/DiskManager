@@ -53,7 +53,17 @@ int main(int argc, char* argv[])
 
 	if (argc < 2)
 	{
-		std::cout << "Usage: DiskManager.exe <disk> [-c:160 or 360] [-s <name>]" << std::endl;
+#ifdef __linux__
+		std::cout << "Usage: ./DiskManager <disk> [options]" << std::endl << std::endl;
+#elif defined(_WIN32) || defined(_WIN64)
+		std::cout << "Usage: DiskManager.exe <disk> [options]" << std::endl << std::endl;
+#endif
+		std::cout << "Available options:" << std::endl << std::endl;
+		std::cout << "    -c:number - create a new diskette image." << std::endl;
+		std::cout << "                NOTE! It can erase all data in specified file.So it can recreate file." << std::endl;
+		std::cout << "                Accepts only 160kb and 360kb diskette sizes." << std::endl << std::endl;
+		std::cout << "    -s file   - a relative or absolute path of a script to run program commands." << std::endl;
+		std::cout << "                Useful if you want to automate diskette creation." << std::endl;
 		return 0;
 	}
 
