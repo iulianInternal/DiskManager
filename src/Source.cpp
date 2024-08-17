@@ -543,7 +543,7 @@ int main(int argc, char* argv[])
 				}
 				//If copying from disk to img
 #ifdef __linux__
-				if (arguments[1][0] == '/')
+				if (arguments[0][0] == '/')
 #elif defined(_WIN32) || defined(_WIN64)
 				else if(arguments[0][1] == ':')
 #endif
