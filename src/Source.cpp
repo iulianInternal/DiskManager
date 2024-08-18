@@ -18,29 +18,33 @@ std::vector<std::string> getArgs(const char* args)
 	std::string string;
 	int argc = 0;
 	bool flag1 = false;
+	bool flag2 = false;
 	while (true)
 	{
 		if (*args == 0)
 			break;
-		if (*args == '"')
+		if (*args == ' ' && flag2 == false)
 		{
-			flag1 = !flag1;
+			flag1 = false;
 			++args;
 			continue;
 		}
-		else
+		if (*args == '"' && flag1 == false)
 		{
-			if (*args == ' ' && flag1 == false)
+			if (flag2 == false)
 				argc += 1;
-			if (arguments.size() != argc)
-				arguments.push_back(string);
-			if (*args == ' ' && flag1 == false)
-			{
-				++args;
-				continue;
-			}
-			arguments[argc-1].append(1, *args);
+			flag2 = !flag2;
+			++args;
+			continue;
 		}
+		if ((*args > 0x21 && *args < 0x7E) && flag1 == false && flag2 == false)
+		{
+			argc += 1;
+			flag1 = true;
+		}
+		if (arguments.size() != argc)
+			arguments.push_back(string);
+		arguments[argc - 1].append(1, *args);
 		++args;
 	}
 	return arguments;
@@ -311,6 +315,8 @@ int main(int argc, char* argv[])
 
 		disk.clear(std::ios_base::goodbit);
 
+		std::vector<std::string> testArguments = getArgs(command.c_str());
+
 		if (command.rfind("dir", 3) != std::string::npos)
 		{
 			std::cout << "Directory of " << currentDirectoryString << std::endl;
@@ -399,7 +405,7 @@ int main(int argc, char* argv[])
 		}
 		else if (command.rfind("copy ", 5) != std::string::npos)
 		{
-			std::vector<std::string> arguments = getArgs(command.c_str() + 4);
+			std::vector<std::string> arguments = getArgs(command.c_str() + 5);
 			if (arguments.size() == 2)
 			{
 				//If copying from img to disk
