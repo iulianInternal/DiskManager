@@ -24,3 +24,4 @@ unsigned int GetClusterChain(std::fstream* disk, unsigned int firstAddressOfFAT,
 
 DirectoryEntry ReadDirectoryEntry(std::fstream* disk);
 void WriteDirectoryTable(std::fstream* disk, DirectoryEntry directoryEntry);
+DirectoryEntry FindDirectoryEntry(std::fstream* disk, unsigned int currentDirectory, std::string name);

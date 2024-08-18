@@ -154,3 +154,40 @@ void WriteDirectoryTable(std::fstream* disk, DirectoryEntry directoryEntry)
 	bytes[3] = directoryEntry.fileSize >> 24;
 	disk->write((char*)bytes, 4);
 }
+
+DirectoryEntry FindDirectoryEntry(std::fstream* disk, unsigned int currentDirectory, std::string name)
+{
+	DirectoryEntry newDirectoryEntry;
+	disk->seekg(currentDirectory);
+	while (true)
+	{
+		DirectoryEntry directoryEntry = ReadDirectoryEntry(disk);
+
+		if (directoryEntry.name[0] == 0)
+			break;
+		else if (directoryEntry.name[0] == 0xE5)
+			continue;
+
+		std::string nameString = directoryEntry.name;
+		while (nameString.back() == ' ')
+		{
+			nameString.pop_back();
+			if (nameString.size() == 0)
+				break;
+		}
+		std::string extensionString = directoryEntry.extension;
+		while (extensionString.back() == ' ')
+		{
+			extensionString.pop_back();
+			if (extensionString.size() == 0)
+				break;
+		}
+
+		if (nameString == name)
+		{
+			newDirectoryEntry = directoryEntry;
+			break;
+		}
+	}
+	return newDirectoryEntry;
+}

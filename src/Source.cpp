@@ -369,57 +369,33 @@ int main(int argc, char* argv[])
 		}
 		else if (command.rfind("cd ", 3) != std::string::npos)
 		{
-			bool found = false;
-			disk.seekg(currentDirectory);
-			while (true)
+			DirectoryEntry directoryEntry = FindDirectoryEntry(&disk, currentDirectory, command.substr(3));
+			if (directoryEntry.name[0] == 0)
 			{
-				DirectoryEntry directoryEntry = ReadDirectoryEntry(&disk);
-
-				if (directoryEntry.name[0] == 0)
-					break;
-				else if (directoryEntry.name[0] == 0xE5)
-					continue;
-
-				std::string nameString = directoryEntry.name;
-				while (nameString.back() == ' ')
-				{
-					nameString.pop_back();
-					if (nameString.size() == 0)
-						break;
-				}
-				std::string extensionString = directoryEntry.extension;
-				while (extensionString.back() == ' ')
-				{
-					extensionString.pop_back();
-					if (extensionString.size() == 0)
-						break;
-				}
-
-				if (nameString == command.substr(3))
-				{
-					if ((directoryEntry.fileAttributes & 0x10) != 0x10)
-						break;
-					found = true;
-
-					if (nameString[0] == '.' && nameString[1] == 0)
-					{
-						std::cout << currentDirectoryString << std::endl;
-						break;
-					}
-
-					unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
-					unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
-					currentDirectory = directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory;
-					if (nameString[0] == '.' && nameString[1] == '.')
-						currentDirectoryString.erase(currentDirectoryString.rfind("\\", currentDirectoryString.length()-2)+1);
-					else
-						currentDirectoryString.append(nameString).append("\\");
-					std::cout << "Changed directory to " << currentDirectoryString << std::endl;
-					break;
-				}
-			}
-			if (found == false)
 				std::cout << "Invalid directory" << std::endl;
+				continue;
+			}
+			if ((directoryEntry.fileAttributes & 0x10) != 0x10)
+			{
+				std::cout << command.substr(3) << "is not a directory" << std::endl;
+				continue;
+			}
+
+			if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == 0)
+			{
+				std::cout << currentDirectoryString << std::endl;
+				break;
+			}
+
+			unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
+			unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+			currentDirectory = directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory;
+			if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == '.')
+				currentDirectoryString.erase(currentDirectoryString.rfind("\\", currentDirectoryString.length() - 2) + 1);
+			else
+				currentDirectoryString.append(directoryEntry.name).append("\\");
+			std::cout << "Changed directory to " << currentDirectoryString << std::endl;
+
 		}
 		else if (command.rfind("copy ", 5) != std::string::npos)
 		{

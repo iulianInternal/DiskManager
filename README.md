@@ -42,8 +42,8 @@ Then compile project with installed compatible C++17 compiler:
 
     cmake --build .
 
-Tested on Windows and on Linux (Debian).  
-If you find bugs in untested OS, open an issue.
+Tested on Windows and on Linux (Debian), but may be unnoticed bugs.  
+If you find any bugs, open an issue.  
 
 License
 -------
