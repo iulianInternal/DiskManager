@@ -311,13 +311,18 @@ int main(int argc, char* argv[])
 		}
 		else
 			std::getline(std::cin, command);
-		std::cout << std::endl;
 
 		disk.clear(std::ios_base::goodbit);
 
-		std::vector<std::string> testArguments = getArgs(command.c_str());
+		std::vector<std::string> arguments = getArgs(command.c_str());
 
-		if (command.rfind("dir", 3) != std::string::npos)
+		if (arguments.size() == 0)
+		{
+			std::cout << "Invalid command. Use \"help\" for command list." << std::endl;
+			std::cout << std::endl;
+			continue;
+		}
+		if (arguments[0] == "dir")
 		{
 			std::cout << "Directory of " << currentDirectoryString << std::endl;
 			disk.seekg(currentDirectory);
@@ -373,7 +378,7 @@ int main(int argc, char* argv[])
 				std::cout << std::endl;
 			}
 		}
-		else if (command.rfind("cd ", 3) != std::string::npos)
+		else if (arguments[0] == "cd")
 		{
 			DirectoryEntry directoryEntry = FindDirectoryEntry(&disk, currentDirectory, command.substr(3));
 			if (directoryEntry.name[0] == 0)
@@ -403,16 +408,15 @@ int main(int argc, char* argv[])
 			std::cout << "Changed directory to " << currentDirectoryString << std::endl;
 
 		}
-		else if (command.rfind("copy ", 5) != std::string::npos)
+		else if (arguments[0] == "copy")
 		{
-			std::vector<std::string> arguments = getArgs(command.c_str() + 5);
-			if (arguments.size() == 2)
+			if (arguments.size() == 3)
 			{
 				//If copying from img to disk
 #ifdef __linux__
-				if (arguments[1][0] == '/')
+				if (arguments[2][0] == '/')
 #elif defined(_WIN32) || defined(_WIN64)
-				if (arguments[1][1] == ':')
+				if (arguments[2][1] == ':')
 #endif
 				{
 					std::string namePath = "";
@@ -456,9 +460,9 @@ int main(int argc, char* argv[])
 								break;
 						}
 
-						if (nameString == arguments[0] || exitStack.size() != 0)
+						if (nameString == arguments[1] || exitStack.size() != 0)
 						{
-							directoryPath = arguments[1];
+							directoryPath = arguments[2];
 
 							if ((directoryEntry.fileAttributes & 0x10) == 0x10)
 							{
@@ -525,14 +529,14 @@ int main(int argc, char* argv[])
 				}
 				//If copying from disk to img
 #ifdef __linux__
-				if (arguments[0][0] == '/')
+				if (arguments[1][0] == '/')
 #elif defined(_WIN32) || defined(_WIN64)
-				else if(arguments[0][1] == ':')
+				else if(arguments[1][1] == ':')
 #endif
 				{
-					if (!std::filesystem::is_directory(arguments[0]))
+					if (!std::filesystem::is_directory(arguments[1]))
 					{
-						std::string fileNameWithExtension = arguments[0];
+						std::string fileNameWithExtension = arguments[1];
 						fileNameWithExtension.erase(0, fileNameWithExtension.rfind(FILESYSTEM_FOLDER_PATH_SYMBOL) + 1);
 						std::string fileName = fileNameWithExtension;
 						if (fileNameWithExtension.rfind(".") != std::string::npos)
@@ -553,13 +557,13 @@ int main(int argc, char* argv[])
 							fileExtension[i] = fileExtension.length() > i ? std::toupper(fileExtension[i]) : 0x20;
 						}
 						std::ifstream file;
-						file.open(arguments[0], std::ios_base::in | std::ios_base::binary);
+						file.open(arguments[1], std::ios_base::in | std::ios_base::binary);
 						if (file.is_open())
 						{
 							unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
 							unsigned int addressData = 0;
 							bool foundFolder = true;
-							std::string folders = arguments[1];
+							std::string folders = arguments[2];
 							while (true)
 							{
 								if (folders.find("\\") == std::string::npos)
@@ -599,7 +603,7 @@ int main(int argc, char* argv[])
 							unsigned int oldAddress = disk.tellg();
 							unsigned int clusterStart = GetFreeCluster(&disk, firstAddressOfFAT + offset);
 							addressData = addressRegion + (clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
-							if (addressData+std::filesystem::file_size(arguments[0]) >= MaxFileSize)
+							if (addressData+std::filesystem::file_size(arguments[1]) >= MaxFileSize)
 							{
 								std::cout << "Ran out of space!" << std::endl;
 								goto skip;
@@ -648,8 +652,8 @@ int main(int argc, char* argv[])
 					}
 					else
 					{
-						std::filesystem::recursive_directory_iterator files(arguments[0]);
-						for (std::filesystem::recursive_directory_iterator i(arguments[0]); std::filesystem::begin(i) != std::filesystem::end(files); i++)
+						std::filesystem::recursive_directory_iterator files(arguments[1]);
+						for (std::filesystem::recursive_directory_iterator i(arguments[1]); std::filesystem::begin(i) != std::filesystem::end(files); i++)
 						{
 
 						}
@@ -657,20 +661,19 @@ int main(int argc, char* argv[])
 				}
 			}
 		}
-		else if (command.rfind("md ", 3) != std::string::npos)
+		else if (arguments[0] == "md")
 		{
-			std::vector<std::string> arguments = getArgs(command.c_str() + 2);
-			if (arguments.size() == 1)
+			if (arguments.size() == 2)
 			{
 				bool canCreate = true;
 				unsigned int freeSpace = 0;
 
 				unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
 
-				arguments[0].resize(8, 0x20);
+				arguments[1].resize(8, 0x20);
 				for (int i = 0; i < 8; i++)
 				{
-					arguments[0][i] = arguments[0].length() > i ? std::toupper(arguments[0][i]) : 0x20;
+					arguments[1][i] = arguments[1].length() > i ? std::toupper(arguments[1][i]) : 0x20;
 				}
 
 				disk.seekg(currentDirectory);
@@ -706,7 +709,7 @@ int main(int argc, char* argv[])
 							break;
 					}
 
-					if (nameString == arguments[0])
+					if (nameString == arguments[1])
 					{
 						if ((directoryEntry.fileAttributes & 0x10) == 0x10)
 							std::cout << "Directory already exists." << std::endl;
@@ -720,7 +723,7 @@ int main(int argc, char* argv[])
 				{
 					unsigned int freeCluster = GetFreeCluster(&disk, firstAddressOfFAT);
 					disk.seekg(freeSpace);
-					DirectoryEntry newDirectory = { arguments[0], "   ", 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, freeCluster, 0x00};
+					DirectoryEntry newDirectory = { arguments[1], "   ", 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, freeCluster, 0x00};
 					WriteDirectoryTable(&disk, newDirectory);
 
 					WriteClusterChain(&disk, firstAddressOfFAT + offset, freeCluster, 0xFFF);
@@ -749,12 +752,11 @@ int main(int argc, char* argv[])
 
 			}
 		}*/
-		else if (command.rfind("cl ", 3) != std::string::npos)
+		else if (arguments[0] == "cl")
 		{
-			std::vector<std::string> arguments = getArgs(command.c_str() + 2);
-			if (arguments.size() > 0)
+			if (arguments.size() > 1)
 			{
-				std::string labelName = arguments[0];
+				std::string labelName = arguments[1];
 				labelName.resize(8, 0x20);
 				DirectoryEntry newFile = { labelName, "   ", 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 				WriteDirectoryTable(&disk, newFile);
@@ -765,11 +767,11 @@ int main(int argc, char* argv[])
 				std::cout << "Usage: cl <name>" << std::endl;
 			}
 		}
-		else if (command.rfind("exit", 4) != std::string::npos)
+		else if (arguments[0] == "exit")
 		{
 			break;
 		}
-		else if (command.rfind("help", 4) != std::string::npos)
+		else if (arguments[0] == "help")
 		{
 			std::cout << "Available commands:" << std::endl;
 			std::cout << "help - shows this information" << std::endl;
