@@ -288,9 +288,11 @@ int main(int argc, char* argv[])
 	unsigned int firstAddressOfFAT = reservedLogicalSectors * bytesPerLogicalSector;
 	unsigned int rootDirectory = firstAddressOfFAT + numberOfFAT * logicalSectorPerFAT * bytesPerLogicalSector + offset;
 	unsigned int currentDirectory = rootDirectory;
+	unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
 	std::string currentDirectoryString = "root:\\\\";
 	std::cout << "First address of FAT: " << std::to_string(firstAddressOfFAT) << std::endl;
 	std::cout << "Root directory location: " << std::to_string(currentDirectory) << std::endl;
+	std::cout << "Address region location: " << std::to_string(addressRegion) << std::endl;
 	std::cout << std::endl;
 
 	disk.seekg(currentDirectory);
@@ -398,7 +400,6 @@ int main(int argc, char* argv[])
 				break;
 			}
 
-			unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
 			unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
 			currentDirectory = directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory;
 			if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == '.')
@@ -422,8 +423,6 @@ int main(int argc, char* argv[])
 					std::string namePath = "";
 					std::string directoryPath;
 					std::vector<unsigned int> exitStack;
-
-					unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
 
 					disk.seekg(currentDirectory);
 					while (true)
@@ -492,7 +491,6 @@ int main(int argc, char* argv[])
 								if (file.is_open())
 								{
 									unsigned int oldAddress = disk.tellg();
-									unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
 									unsigned int addressData = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
 
 									unsigned int clusterIndex = directoryEntry.clusterStart;
@@ -560,7 +558,6 @@ int main(int argc, char* argv[])
 						file.open(arguments[1], std::ios_base::in | std::ios_base::binary);
 						if (file.is_open())
 						{
-							unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
 							unsigned int addressData = 0;
 							bool foundFolder = true;
 							std::string folders = arguments[2];
@@ -668,8 +665,6 @@ int main(int argc, char* argv[])
 				bool canCreate = true;
 				unsigned int freeSpace = 0;
 
-				unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
-
 				for (int i = 0; i < arguments[1].length(); i++)
 				{
 					arguments[1][i] = arguments[1].length() > i ? std::toupper(arguments[1][i]) : 0x20;
@@ -692,7 +687,6 @@ int main(int argc, char* argv[])
 					}
 					else
 					{
-						unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
 						unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
 						disk.seekg(directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory);
 					}
