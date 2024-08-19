@@ -670,13 +670,38 @@ int main(int argc, char* argv[])
 
 				unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
 
-				arguments[1].resize(8, 0x20);
-				for (int i = 0; i < 8; i++)
+				for (int i = 0; i < arguments[1].length(); i++)
 				{
 					arguments[1][i] = arguments[1].length() > i ? std::toupper(arguments[1][i]) : 0x20;
 				}
 
 				disk.seekg(currentDirectory);
+
+				bool found = true;
+				size_t firstPos = arguments[1].find('\\');
+
+				while (firstPos != std::string::npos)
+				{
+					DirectoryEntry directoryEntry = FindDirectoryEntry(&disk, currentDirectory, arguments[1].substr(0, firstPos));
+					if (directoryEntry.name[0] == 0)
+					{
+						std::cout << "Directory " << arguments[1].substr(0, firstPos) << " does not exist." << std::endl;
+						std::cout << std::endl;
+						found = false;
+						break;
+					}
+					else
+					{
+						unsigned int addressRegion = rootDirectory + maxNumberOfFAT * 32;
+						unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+						disk.seekg(directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory);
+					}
+					arguments[1].erase(0, firstPos+1);
+					firstPos = arguments[1].find('\\');
+				}
+				if (found == false)
+					continue;
+
 				while (true)
 				{
 					DirectoryEntry directoryEntry = ReadDirectoryEntry(&disk);
@@ -786,7 +811,7 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			std::cout << "Invalid command." << std::endl;
+			std::cout << "Invalid command. Use \"help\" for command list." << std::endl;
 		}
 		std::cout << std::endl;
 	}
