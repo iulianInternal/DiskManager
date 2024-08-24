@@ -16,6 +16,9 @@ struct DirectoryEntry
 	unsigned short lastModifiedDate = 0;
 	unsigned short clusterStart = 0;
 	unsigned int fileSize = 0;
+
+	std::string GetName();
+	std::string GetExtension();
 };
 
 unsigned int GetFreeCluster(std::fstream* disk, unsigned int firstAddressOfFAT);

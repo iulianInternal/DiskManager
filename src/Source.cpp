@@ -405,7 +405,7 @@ int main(int argc, char* argv[])
 			if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == '.')
 				currentDirectoryString.erase(currentDirectoryString.rfind("\\", currentDirectoryString.length() - 2) + 1);
 			else
-				currentDirectoryString.append(directoryEntry.name).append("\\");
+				currentDirectoryString.append(directoryEntry.GetName()).append("\\");
 			std::cout << "Changed directory to " << currentDirectoryString << std::endl;
 
 		}
@@ -444,20 +444,8 @@ int main(int argc, char* argv[])
 						else if ((unsigned char)directoryEntry.name[0] == 0xE5)
 							continue;
 
-						std::string nameString = directoryEntry.name;
-						while (nameString.back() == ' ')
-						{
-							nameString.pop_back();
-							if (nameString.size() == 0)
-								break;
-						}
-						std::string extensionString = directoryEntry.extension;
-						while (extensionString.back() == ' ')
-						{
-							extensionString.pop_back();
-							if (extensionString.size() == 0)
-								break;
-						}
+						std::string nameString = directoryEntry.GetName();
+						std::string extensionString = directoryEntry.GetExtension();
 
 						if (nameString == arguments[1] || exitStack.size() != 0)
 						{
@@ -715,20 +703,8 @@ int main(int argc, char* argv[])
 						continue;
 					}
 
-					std::string nameString = directoryEntry.name;
-					while (nameString.back() == ' ')
-					{
-						nameString.pop_back();
-						if (nameString.size() == 0)
-							break;
-					}
-					std::string extensionString = directoryEntry.extension;
-					while (extensionString.back() == ' ')
-					{
-						extensionString.pop_back();
-						if (extensionString.size() == 0)
-							break;
-					}
+					std::string nameString = directoryEntry.GetName();
+					std::string extensionString = directoryEntry.GetExtension();
 
 					if (nameString == arguments[1])
 					{

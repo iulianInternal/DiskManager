@@ -1,6 +1,32 @@
 #include "FAT.h"
 #include <fstream>
 
+std::string DirectoryEntry::GetName()
+{
+	std::string nameString = this->name;
+	if (nameString.size() != 0)
+	{
+		while (nameString.back() == ' ')
+		{
+			nameString.pop_back();
+		}
+	}
+	return nameString;
+}
+
+std::string DirectoryEntry::GetExtension()
+{
+	std::string extensionString = this->extension;
+	if (extensionString.size() == 0)
+	{
+		while (extensionString.back() == ' ')
+		{
+			extensionString.pop_back();
+		}
+	}
+	return extensionString;
+}
+
 DirectoryEntry ReadDirectoryEntry(std::fstream* disk)
 {
 	unsigned char bytes[8];
