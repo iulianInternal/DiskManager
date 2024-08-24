@@ -696,6 +696,8 @@ int main(int argc, char* argv[])
 				if (found == false)
 					continue;
 
+				unsigned int previousCluster = (unsigned int)disk.tellg() != rootDirectory ? ((unsigned int)disk.tellg() - addressRegion) / bytesPerLogicalSector / logicalSectorPerCluster + 2 : 0;
+
 				while (true)
 				{
 					DirectoryEntry directoryEntry = ReadDirectoryEntry(&disk);
@@ -752,7 +754,7 @@ int main(int argc, char* argv[])
 					disk.seekg(addressData);
 
 					DirectoryEntry newCurrentDirectory = { ".", "   ", 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, freeCluster, 0x00 };
-					DirectoryEntry newParentDirectory = { "..", "   ", 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, currentDirectory != rootDirectory ? freeSpace : 0, 0x00 };
+					DirectoryEntry newParentDirectory = { "..", "   ", 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, previousCluster, 0x00 };
 					WriteDirectoryTable(&disk, newCurrentDirectory);
 					WriteDirectoryTable(&disk, newParentDirectory);
 					disk.seekg(currentDirectory);
