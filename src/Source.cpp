@@ -382,7 +382,11 @@ int main(int argc, char* argv[])
 		}
 		else if (arguments[0] == "cd")
 		{
-			DirectoryEntry directoryEntry = FindDirectoryEntry(&disk, currentDirectory, command.substr(3));
+			for (int i = 0; i < arguments[1].length(); i++)
+			{
+				arguments[1][i] = arguments[1].length() > i ? std::toupper(arguments[1][i]) : 0x20;
+			}
+			DirectoryEntry directoryEntry = FindDirectoryEntry(&disk, currentDirectory, arguments[1]);
 			if (directoryEntry.name[0] == 0)
 			{
 				std::cout << "Invalid directory" << std::endl;
@@ -390,7 +394,7 @@ int main(int argc, char* argv[])
 			}
 			if ((directoryEntry.fileAttributes & 0x10) != 0x10)
 			{
-				std::cout << command.substr(3) << "is not a directory" << std::endl;
+				std::cout << arguments[1] << "is not a directory" << std::endl;
 				continue;
 			}
 
