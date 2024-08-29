@@ -324,10 +324,10 @@ int main(int argc, char* argv[])
 			std::cout << std::endl;
 			continue;
 		}
+		disk.seekg(currentDirectory);
 		if (arguments[0] == "dir")
 		{
 			std::cout << "Directory of " << currentDirectoryString << std::endl;
-			disk.seekg(currentDirectory);
 			while (true)
 			{
 				DirectoryEntry directoryEntry = ReadDirectoryEntry(&disk);
@@ -386,7 +386,48 @@ int main(int argc, char* argv[])
 			{
 				arguments[1][i] = arguments[1].length() > i ? std::toupper(arguments[1][i]) : 0x20;
 			}
-			DirectoryEntry directoryEntry = FindDirectoryEntry(&disk, currentDirectory, arguments[1]);
+			std::string newPath = currentDirectoryString;
+
+			bool found = true;
+			size_t firstPos = arguments[1].find('\\');
+			DirectoryEntry directoryEntry;
+
+			while (firstPos != std::string::npos || firstPos == arguments[1].length()-1)
+			{
+				directoryEntry = FindDirectoryEntry(&disk, (unsigned int)disk.tellg(), arguments[1].substr(0, firstPos));
+				if (directoryEntry.name[0] == 0)
+				{
+					std::cout << "Directory " << arguments[1].substr(0, firstPos) << " does not exist." << std::endl;
+					std::cout << std::endl;
+					found = false;
+					break;
+				}
+				else
+				{
+					if ((directoryEntry.fileAttributes & 0x10) != 0x10)
+					{
+						std::cout << arguments[1] << "is not a directory" << std::endl;
+						found = false;
+						break;
+					}
+					newPath.append(arguments[1].substr(0, firstPos)).append("\\");
+					if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == 0x20)
+						newPath.erase(newPath.rfind("\\", newPath.length() - 2) + 1);
+					else if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == '.')
+					{
+						newPath.erase(newPath.rfind("\\", newPath.length() - 2) + 1);
+						newPath.erase(newPath.rfind("\\", newPath.length() - 2) + 1);
+					}
+					unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+					disk.seekg(directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory);
+				}
+				arguments[1].erase(0, firstPos + 1);
+				firstPos = arguments[1].find('\\');
+			}
+			if (found == false)
+				continue;
+
+			directoryEntry = FindDirectoryEntry(&disk, (unsigned int)disk.tellg(), arguments[1]);
 			if (directoryEntry.name[0] == 0)
 			{
 				std::cout << "Invalid directory" << std::endl;
@@ -398,18 +439,18 @@ int main(int argc, char* argv[])
 				continue;
 			}
 
-			if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == 0)
-			{
-				std::cout << currentDirectoryString << std::endl;
-				break;
-			}
-
 			unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
 			currentDirectory = directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory;
-			if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == '.')
-				currentDirectoryString.erase(currentDirectoryString.rfind("\\", currentDirectoryString.length() - 2) + 1);
-			else
-				currentDirectoryString.append(directoryEntry.GetName()).append("\\");
+			
+			newPath.append(arguments[1]).append("\\");
+			if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == 0x20)
+				newPath.erase(newPath.rfind("\\", newPath.length() - 2) + 1);
+			else if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == '.')
+			{
+				newPath.erase(newPath.rfind("\\", newPath.length() - 2) + 1);
+				newPath.erase(newPath.rfind("\\", newPath.length() - 2) + 1);
+			}
+			currentDirectoryString = newPath;
 			std::cout << "Changed directory to " << currentDirectoryString << std::endl;
 
 		}
@@ -428,7 +469,6 @@ int main(int argc, char* argv[])
 					std::string directoryPath;
 					std::vector<unsigned int> exitStack;
 
-					disk.seekg(currentDirectory);
 					while (true)
 					{
 						DirectoryEntry directoryEntry = ReadDirectoryEntry(&disk);
@@ -630,7 +670,6 @@ int main(int argc, char* argv[])
 							disk.seekg(oldAddress);
 							DirectoryEntry newFile = { fileName, fileExtension, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, clusterStart, fileSize };
 							WriteDirectoryTable(&disk, newFile);
-							disk.seekg(currentDirectory);
 						}
 						else
 						{
@@ -661,8 +700,6 @@ int main(int argc, char* argv[])
 				{
 					arguments[1][i] = arguments[1].length() > i ? std::toupper(arguments[1][i]) : 0x20;
 				}
-
-				disk.seekg(currentDirectory);
 
 				bool found = true;
 				size_t firstPos = arguments[1].find('\\');
@@ -737,7 +774,6 @@ int main(int argc, char* argv[])
 					DirectoryEntry newParentDirectory = { "..", "   ", 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, previousCluster, 0x00 };
 					WriteDirectoryTable(&disk, newCurrentDirectory);
 					WriteDirectoryTable(&disk, newParentDirectory);
-					disk.seekg(currentDirectory);
 				}
 				else if (freeSpace == 0)
 				{
@@ -761,7 +797,6 @@ int main(int argc, char* argv[])
 				labelName.resize(8, 0x20);
 				DirectoryEntry newFile = { labelName, "   ", 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 				WriteDirectoryTable(&disk, newFile);
-				disk.seekg(currentDirectory);
 			}
 			else
 			{
