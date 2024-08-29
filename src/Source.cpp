@@ -328,6 +328,59 @@ int main(int argc, char* argv[])
 		if (arguments[0] == "dir")
 		{
 			std::cout << "Directory of " << currentDirectoryString << std::endl;
+
+			if (arguments.size() == 2)
+			{
+				for (int i = 0; i < arguments[1].length(); i++)
+				{
+					arguments[1][i] = std::toupper(arguments[1][i]);
+				}
+
+				bool found = true;
+				size_t firstPos = arguments[1].find('\\');
+				DirectoryEntry directoryEntry;
+
+				while (firstPos != std::string::npos || firstPos == arguments[1].length() - 1)
+				{
+					directoryEntry = FindDirectoryEntry(&disk, (unsigned int)disk.tellg(), arguments[1].substr(0, firstPos));
+					if (directoryEntry.name[0] == 0)
+					{
+						std::cout << "Directory " << arguments[1].substr(0, firstPos) << " does not exist." << std::endl;
+						std::cout << std::endl;
+						found = false;
+						break;
+					}
+					if ((directoryEntry.fileAttributes & 0x10) != 0x10)
+					{
+						std::cout << arguments[1] << " is not a directory" << std::endl;
+						found = false;
+						break;
+					}
+					unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+					disk.seekg(directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory);
+
+					arguments[1].erase(0, firstPos + 1);
+					firstPos = arguments[1].find('\\');
+				}
+				if (found == false)
+					continue;
+
+				directoryEntry = FindDirectoryEntry(&disk, (unsigned int)disk.tellg(), arguments[1].substr(0, firstPos));
+				if (directoryEntry.name[0] == 0)
+				{
+					std::cout << "Directory " << arguments[1].substr(0, firstPos) << " does not exist." << std::endl;
+					std::cout << std::endl;
+					continue;
+				}
+				if ((directoryEntry.fileAttributes & 0x10) != 0x10)
+				{
+					std::cout << arguments[1] << " is not a directory" << std::endl;
+					continue;
+				}
+				unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+				disk.seekg(directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory);
+			}
+
 			while (true)
 			{
 				DirectoryEntry directoryEntry = ReadDirectoryEntry(&disk);
@@ -384,7 +437,7 @@ int main(int argc, char* argv[])
 		{
 			for (int i = 0; i < arguments[1].length(); i++)
 			{
-				arguments[1][i] = arguments[1].length() > i ? std::toupper(arguments[1][i]) : 0x20;
+				arguments[1][i] = std::toupper(arguments[1][i]);
 			}
 			std::string newPath = currentDirectoryString;
 
@@ -402,25 +455,23 @@ int main(int argc, char* argv[])
 					found = false;
 					break;
 				}
-				else
+				if ((directoryEntry.fileAttributes & 0x10) != 0x10)
 				{
-					if ((directoryEntry.fileAttributes & 0x10) != 0x10)
-					{
-						std::cout << arguments[1] << "is not a directory" << std::endl;
-						found = false;
-						break;
-					}
-					newPath.append(arguments[1].substr(0, firstPos)).append("\\");
-					if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == 0x20)
-						newPath.erase(newPath.rfind("\\", newPath.length() - 2) + 1);
-					else if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == '.')
-					{
-						newPath.erase(newPath.rfind("\\", newPath.length() - 2) + 1);
-						newPath.erase(newPath.rfind("\\", newPath.length() - 2) + 1);
-					}
-					unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
-					disk.seekg(directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory);
+					std::cout << arguments[1] << " is not a directory" << std::endl;
+					found = false;
+					break;
 				}
+				newPath.append(arguments[1].substr(0, firstPos)).append("\\");
+				if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == 0x20)
+					newPath.erase(newPath.rfind("\\", newPath.length() - 2) + 1);
+				else if (directoryEntry.name[0] == '.' && directoryEntry.name[1] == '.')
+				{
+					newPath.erase(newPath.rfind("\\", newPath.length() - 2) + 1);
+					newPath.erase(newPath.rfind("\\", newPath.length() - 2) + 1);
+				}
+				unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+				disk.seekg(directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory);
+
 				arguments[1].erase(0, firstPos + 1);
 				firstPos = arguments[1].find('\\');
 			}
@@ -435,7 +486,7 @@ int main(int argc, char* argv[])
 			}
 			if ((directoryEntry.fileAttributes & 0x10) != 0x10)
 			{
-				std::cout << arguments[1] << "is not a directory" << std::endl;
+				std::cout << arguments[1] << " is not a directory" << std::endl;
 				continue;
 			}
 
@@ -698,7 +749,7 @@ int main(int argc, char* argv[])
 
 				for (int i = 0; i < arguments[1].length(); i++)
 				{
-					arguments[1][i] = arguments[1].length() > i ? std::toupper(arguments[1][i]) : 0x20;
+					arguments[1][i] = std::toupper(arguments[1][i]);
 				}
 
 				bool found = true;
