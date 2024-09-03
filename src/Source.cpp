@@ -211,7 +211,6 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	unsigned int MaxFileSize = std::filesystem::file_size(argv[1]);
 	std::fstream disk;
 	disk.open(argv[1], std::ios_base::in | std::ios_base::out | std::ios_base::binary);
 	if (!disk.is_open())
@@ -219,6 +218,7 @@ int main(int argc, char* argv[])
 		std::cout << "Disk was not found." << std::endl;
 		return 0;
 	}
+	unsigned int maxFileSize = std::filesystem::file_size(argv[1]);
 
 	std::string diskName = argv[1];
 	diskName.erase(0, diskName.rfind("\\")+1);
@@ -683,7 +683,7 @@ int main(int argc, char* argv[])
 							unsigned int oldAddress = disk.tellg();
 							unsigned int clusterStart = GetFreeCluster(&disk, firstAddressOfFAT + offset);
 							addressData = addressRegion + (clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
-							if (addressData+std::filesystem::file_size(arguments[1]) >= MaxFileSize)
+							if (addressData+std::filesystem::file_size(arguments[1]) >= maxFileSize)
 							{
 								std::cout << "Ran out of space!" << std::endl;
 								goto skip;
