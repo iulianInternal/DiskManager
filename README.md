@@ -5,7 +5,10 @@ Currently supports only FAT12 file system.
 
 How to use
 ----------
-&emsp;`Usage: DiskManager.exe <disk> [options]`
+For Windows:  
+&emsp;`Usage: DiskManager.exe <disk> [options]`  
+For Linux:  
+&emsp;`Usage: ./DiskManager <disk> [options]`
 
 &emsp;disk - a relative or absolute path of a file to read/edit.  
   
