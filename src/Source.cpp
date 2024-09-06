@@ -52,7 +52,7 @@ std::vector<std::string> getArgs(const char* args)
 
 int main(int argc, char* argv[])
 {
-	std::cout << "Disk manager 0.1.0\r\n(c) iulianInternal 2024" << std::endl;
+	std::cout << "Disk manager 0.1.1\r\n(c) iulianInternal 2024" << std::endl;
 	std::cout << std::endl;
 
 	if (argc < 2)
