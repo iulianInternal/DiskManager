@@ -832,14 +832,29 @@ int main(int argc, char* argv[])
 				}
 			}
 		}
-		/*else if (command.rfind("rd ", 3) != std::string::npos)
+		else if (arguments[0] == "rd")
 		{
-			std::vector<std::string> arguments = getArgs(command.c_str() + 2);
-			if (arguments.size() == 1)
+			if (arguments.size() == 2)
 			{
+				for (int i = 0; i < arguments[1].length(); i++)
+				{
+					arguments[1][i] = std::toupper(arguments[1][i]);
+				}
 
+				DirectoryEntry folder = FindDirectoryEntry(&disk, currentDirectory, arguments[1]);
+				unsigned int addressData = addressRegion + (folder.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+				disk.seekg(addressData);
+				DirectoryEntry file;
+				file = ReadDirectoryEntry(&disk);
+				file = ReadDirectoryEntry(&disk);
+				file = ReadDirectoryEntry(&disk);
+				if (file.name[0] != 0)
+				{
+					std::cout << "Directory is not empty." << std::endl;
+					continue;
+				}
 			}
-		}*/
+		}
 		else if (arguments[0] == "cl")
 		{
 			if (arguments.size() > 1)
@@ -867,7 +882,7 @@ int main(int argc, char* argv[])
 			std::cout << "copy <from> <to> - copies file or directory to specified directory" << std::endl;
 			std::cout << "                   By default, if you don't specify any drive, it will use the virtual disk drive." << std::endl;
 			std::cout << "md <name> - make directory" << std::endl;
-			//std::cout << "rd <name> - remove directory" << std::endl;
+			std::cout << "rd <name> - remove directory" << std::endl;
 			std::cout << "cl <name> - creates label for a disk" << std::endl;
 			std::cout << "exit - close the program" << std::endl;
 		}
