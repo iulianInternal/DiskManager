@@ -842,17 +842,28 @@ int main(int argc, char* argv[])
 				}
 
 				DirectoryEntry folder = FindDirectoryEntry(&disk, currentDirectory, arguments[1]);
+				unsigned int oldAddress = (unsigned int)disk.tellg()-32;
 				unsigned int addressData = addressRegion + (folder.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
 				disk.seekg(addressData);
 				DirectoryEntry file;
 				file = ReadDirectoryEntry(&disk);
 				file = ReadDirectoryEntry(&disk);
-				file = ReadDirectoryEntry(&disk);
-				if (file.name[0] != 0)
+				unsigned int amountOfFiles = 0;
+				while (file.name[0] != 0)
+				{
+					file = ReadDirectoryEntry(&disk);
+					if (file.name[0] != 0 && file.name[0] != 0xE5)
+						amountOfFiles += 1;
+				}
+				if (amountOfFiles != 0)
 				{
 					std::cout << "Directory is not empty." << std::endl;
 					continue;
 				}
+
+				folder.name[0] = 0xE5;
+				disk.seekg(oldAddress);
+				WriteDirectoryTable(&disk, folder);
 			}
 		}
 		else if (arguments[0] == "cl")
