@@ -3,7 +3,13 @@
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 -----------------------------------------------------------------------------------------------------
-## DiskManager 0.1.1 - N/A Commit: N/A
+## DiskManager Unreleased - N/A Commit: N/A
+
+### New features:
+- Added command "rd".
+
+-----------------------------------------------------------------------------------------------------
+## DiskManager 0.1.1 - 2024-09-06 Commit: 3cce681a238b66544acf255d07e15a47cf68544f
 Some bug fixes.
 
 ### New features:
@@ -20,7 +26,7 @@ Some bug fixes.
 - Specifying not existing image file will not crash the program.
 
 -----------------------------------------------------------------------------------------------------
-## DiskManager 0.1.0 - 2024-08-17 3:36 PM GMT+3 Commit: 7690226da651b047aeaf53ad8bdb2d45172c86f7
+## DiskManager 0.1.0 - 2024-08-17 Commit: 7690226da651b047aeaf53ad8bdb2d45172c86f7
 This is first initial release. Some bugs may be in here.
 
 ### Available features:
