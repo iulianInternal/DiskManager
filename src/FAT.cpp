@@ -21,7 +21,17 @@ DirectoryEntry::DirectoryEntry()
 DirectoryEntry::DirectoryEntry(std::string name, std::string extension, unsigned char fileAttributes, unsigned char userAttributes, unsigned char firstCharacterOfDeletedFile, unsigned short passwordHash, unsigned short recordSize, unsigned short ownerID, unsigned short fileAccessRightsBitmap, unsigned short lastModifiedTime, unsigned short lastModifiedDate, unsigned short clusterStart, unsigned int fileSize)
 {
 	memcpy(this->name, name.c_str(), 8);
+	for (int i = 0; i < 8; i++)
+	{
+		if (this->name[i] == 0)
+			this->name[i] = 0x20;
+	}
 	memcpy(this->extension, extension.c_str(), 3);
+	for (int i = 0; i < 3; i++)
+	{
+		if (this->extension[i] == 0)
+			this->extension[i] = 0x20;
+	}
 	this->fileAttributes = fileAttributes;
 	this->userAttributes = userAttributes;
 	this->firstCharacterOfDeletedFile = firstCharacterOfDeletedFile;
