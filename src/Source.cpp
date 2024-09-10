@@ -740,6 +740,32 @@ int main(int argc, char* argv[])
 				}
 			}
 		}
+		else if (arguments[0] == "del")
+		{
+			if (arguments.size() == 2)
+			{
+				for (int i = 0; i < arguments[1].length(); i++)
+				{
+					arguments[1][i] = std::toupper(arguments[1][i]);
+				}
+
+				DirectoryEntry file = FindDirectoryEntry(&disk, currentDirectory, arguments[1]);
+				if (file.name[0] == 0)
+				{
+					std::cout << "file was not found." << std::endl;
+					continue;
+				}
+				if ((file.fileAttributes & 0x10) == 0x10)
+				{
+					std::cout << arguments[1] << " is a directory." << std::endl;
+					continue;
+				}
+				unsigned int fileAddress = (unsigned int)disk.tellg() - 32;
+				disk.seekg(fileAddress);
+				file.name[0] = 0xE5;
+				WriteDirectoryTable(&disk, file);
+			}
+		}
 		else if (arguments[0] == "md")
 		{
 			if (arguments.size() == 2)
@@ -892,6 +918,7 @@ int main(int argc, char* argv[])
 			std::cout << "cd - change current directory" << std::endl;
 			std::cout << "copy <from> <to> - copies file or directory to specified directory" << std::endl;
 			std::cout << "                   By default, if you don't specify any drive, it will use the virtual disk drive." << std::endl;
+			std::cout << "del <name> - delete file" << std::endl;
 			std::cout << "md <name> - make directory" << std::endl;
 			std::cout << "rd <name> - remove directory" << std::endl;
 			std::cout << "cl <name> - creates label for a disk" << std::endl;
