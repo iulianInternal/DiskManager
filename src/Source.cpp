@@ -752,7 +752,7 @@ int main(int argc, char* argv[])
 				DirectoryEntry file = FindDirectoryEntry(&disk, currentDirectory, arguments[1]);
 				if (file.name[0] == 0)
 				{
-					std::cout << "file was not found." << std::endl;
+					std::cout << "File was not found." << std::endl;
 					continue;
 				}
 				if ((file.fileAttributes & 0x10) == 0x10)
@@ -868,6 +868,11 @@ int main(int argc, char* argv[])
 				}
 
 				DirectoryEntry folder = FindDirectoryEntry(&disk, currentDirectory, arguments[1]);
+				if (folder.name[0] == 0)
+				{
+					std::cout << "Folder was not found." << std::endl;
+					continue;
+				}
 				unsigned int oldAddress = (unsigned int)disk.tellg()-32;
 				unsigned int addressData = addressRegion + (folder.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
 				disk.seekg(addressData);
