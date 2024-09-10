@@ -7,13 +7,20 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### New features:
 - Added command "rd".
+- Added constructors to DirectoryEntry.
+
+### Changes:
+- DirectoryEntry::name and DirectoryEntry::extension are unsigned char now, previously they were std::string.
+
+### Bug fixes:
+- Command "dir" will not show deleted folders.
 
 -----------------------------------------------------------------------------------------------------
 ## DiskManager 0.1.1 - 2024-09-06 Commit: 3cce681a238b66544acf255d07e15a47cf68544f
 Some bug fixes.
 
 ### New features:
-- Command "dir" is now supports first argument.
+- Command "dir" is now supporting first argument.
 - You can specify path in commands "md", "cd" and "dir".
 - Added in class "DirectoryEntry" new functions `GetName()` and `GetExtension()` to retrieve name/extension in normalized way.
 
