@@ -3,19 +3,22 @@
 
 struct DirectoryEntry
 {
-	std::string name = "";
-	std::string extension = "";
-	unsigned char fileAttributes = 0;
-	unsigned char userAttributes = 0;
-	unsigned char firstCharacterOfDeletedFile = 0;
-	unsigned short passwordHash = 0;
-	unsigned short recordSize = 0;
-	unsigned short ownerID = 0;
-	unsigned short fileAccessRightsBitmap = 0;
-	unsigned short lastModifiedTime = 0;
-	unsigned short lastModifiedDate = 0;
-	unsigned short clusterStart = 0;
-	unsigned int fileSize = 0;
+	DirectoryEntry();
+	DirectoryEntry(std::string name, std::string extension, unsigned char fileAttributes, unsigned char userAttributes, unsigned char firstCharacterOfDeletedFile, unsigned short passwordHash, unsigned short recordSize, unsigned short ownerID, unsigned short fileAccessRightsBitmap, unsigned short lastModifiedTime, unsigned short lastModifiedDate, unsigned short clusterStart, unsigned int fileSize);
+
+	unsigned char name[9];
+	unsigned char extension[4];
+	unsigned char fileAttributes;
+	unsigned char userAttributes;
+	unsigned char firstCharacterOfDeletedFile;
+	unsigned short passwordHash;
+	unsigned short recordSize;
+	unsigned short ownerID;
+	unsigned short fileAccessRightsBitmap;
+	unsigned short lastModifiedTime;
+	unsigned short lastModifiedDate;
+	unsigned short clusterStart;
+	unsigned int fileSize;
 
 	std::string GetName();
 	std::string GetExtension();

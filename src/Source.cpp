@@ -664,7 +664,7 @@ int main(int argc, char* argv[])
 										folderName[i] = folderName.length() > i ? std::toupper(folderName[i]) : 0x20;
 									}
 									DirectoryEntry directoryEntry = ReadDirectoryEntry(&disk);
-									if (directoryEntry.name == folderName)
+									if ((char*)directoryEntry.name == folderName)
 									{
 										addressData = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
 										disk.seekg(addressData);
@@ -719,7 +719,7 @@ int main(int argc, char* argv[])
 								disk.seekg(addressData);
 							}
 							disk.seekg(oldAddress);
-							DirectoryEntry newFile = { fileName, fileExtension, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, clusterStart, fileSize };
+							DirectoryEntry newFile = { fileName, fileExtension, (unsigned char)0x20, (unsigned char)0x00, (unsigned char)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)clusterStart, (unsigned int)fileSize };
 							WriteDirectoryTable(&disk, newFile);
 						}
 						else
@@ -812,7 +812,7 @@ int main(int argc, char* argv[])
 				{
 					unsigned int freeCluster = GetFreeCluster(&disk, firstAddressOfFAT);
 					disk.seekg(freeSpace);
-					DirectoryEntry newDirectory = { arguments[1], "   ", 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, freeCluster, 0x00};
+					DirectoryEntry newDirectory = { arguments[1], "   ", (unsigned char)0x10, (unsigned char)0x00, (unsigned char)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)freeCluster, 0x00};
 					WriteDirectoryTable(&disk, newDirectory);
 
 					WriteClusterChain(&disk, firstAddressOfFAT + offset, freeCluster, 0xFFF);
@@ -821,8 +821,8 @@ int main(int argc, char* argv[])
 
 					disk.seekg(addressData);
 
-					DirectoryEntry newCurrentDirectory = { ".", "   ", 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, freeCluster, 0x00 };
-					DirectoryEntry newParentDirectory = { "..", "   ", 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, previousCluster, 0x00 };
+					DirectoryEntry newCurrentDirectory = { ".", "   ", (unsigned char)0x10, (unsigned char)0x00, (unsigned char)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)freeCluster, (unsigned int)0x00 };
+					DirectoryEntry newParentDirectory = { "..", "   ", (unsigned char)0x10, (unsigned char)0x00, (unsigned char)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)previousCluster, (unsigned int)0x00 };
 					WriteDirectoryTable(&disk, newCurrentDirectory);
 					WriteDirectoryTable(&disk, newParentDirectory);
 				}

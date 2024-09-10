@@ -1,9 +1,43 @@
 #include "FAT.h"
 #include <fstream>
 
+DirectoryEntry::DirectoryEntry()
+{
+	memcpy(this->name, "        ", 9);
+	memcpy(this->extension, "   ", 4);
+	this->fileAttributes = 0;
+	this->userAttributes = 0;
+	this->firstCharacterOfDeletedFile = 0;
+	this->passwordHash = 0;
+	this->recordSize = 0;
+	this->ownerID = 0;
+	this->fileAccessRightsBitmap = 0;
+	this->lastModifiedTime = 0;
+	this->lastModifiedDate = 0;
+	this->clusterStart = 0;
+	this->fileSize = 0;
+}
+
+DirectoryEntry::DirectoryEntry(std::string name, std::string extension, unsigned char fileAttributes, unsigned char userAttributes, unsigned char firstCharacterOfDeletedFile, unsigned short passwordHash, unsigned short recordSize, unsigned short ownerID, unsigned short fileAccessRightsBitmap, unsigned short lastModifiedTime, unsigned short lastModifiedDate, unsigned short clusterStart, unsigned int fileSize)
+{
+	memcpy(this->name, name.c_str(), 8);
+	memcpy(this->extension, extension.c_str(), 3);
+	this->fileAttributes = fileAttributes;
+	this->userAttributes = userAttributes;
+	this->firstCharacterOfDeletedFile = firstCharacterOfDeletedFile;
+	this->passwordHash = passwordHash;
+	this->recordSize = recordSize;
+	this->ownerID = ownerID;
+	this->fileAccessRightsBitmap = fileAccessRightsBitmap;
+	this->lastModifiedTime = lastModifiedTime;
+	this->lastModifiedDate = lastModifiedDate;
+	this->clusterStart = clusterStart;
+	this->fileSize = fileSize;
+}
+
 std::string DirectoryEntry::GetName()
 {
-	std::string nameString = this->name;
+	std::string nameString = (char*)this->name;
 	if (nameString.size() != 0)
 	{
 		while (nameString.back() == ' ')
@@ -16,7 +50,7 @@ std::string DirectoryEntry::GetName()
 
 std::string DirectoryEntry::GetExtension()
 {
-	std::string extensionString = this->extension;
+	std::string extensionString = (char*)this->extension;
 	if (extensionString.size() == 0)
 	{
 		while (extensionString.back() == ' ')
@@ -32,11 +66,9 @@ DirectoryEntry ReadDirectoryEntry(std::fstream* disk)
 	unsigned char bytes[8];
 	DirectoryEntry newDirectoryEntry;
 
-	disk->read((char*)bytes, 8);
-	newDirectoryEntry.name.append((char*)bytes, 8);
+	disk->read((char*)newDirectoryEntry.name, 8);
 
-	disk->read((char*)bytes, 3);
-	newDirectoryEntry.extension.append((char*)bytes, 3);
+	disk->read((char*)newDirectoryEntry.extension, 3);
 
 	disk->read((char*)bytes, 1);
 	newDirectoryEntry.fileAttributes = bytes[0];
@@ -143,10 +175,8 @@ unsigned int GetClusterChain(std::fstream* disk, unsigned int firstAddressOfFAT,
 void WriteDirectoryTable(std::fstream* disk, DirectoryEntry directoryEntry)
 {
 	unsigned char bytes[4];
-	directoryEntry.name.resize(8, 0x20);
-	directoryEntry.extension.resize(3, 0x20);
-	disk->write(directoryEntry.name.c_str(), 8);
-	disk->write(directoryEntry.extension.c_str(), 3);
+	disk->write((char*)directoryEntry.name, 8);
+	disk->write((char*)directoryEntry.extension, 3);
 	bytes[0] = directoryEntry.fileAttributes;
 	disk->write((char*)bytes, 1);
 	bytes[0] = directoryEntry.userAttributes;
@@ -194,14 +224,14 @@ DirectoryEntry FindDirectoryEntry(std::fstream* disk, unsigned int currentDirect
 		else if (directoryEntry.name[0] == 0xE5)
 			continue;
 
-		std::string nameString = directoryEntry.name;
+		std::string nameString = (char*)directoryEntry.name;
 		while (nameString.back() == ' ')
 		{
 			nameString.pop_back();
 			if (nameString.size() == 0)
 				break;
 		}
-		std::string extensionString = directoryEntry.extension;
+		std::string extensionString = (char*)directoryEntry.extension;
 		while (extensionString.back() == ' ')
 		{
 			extensionString.pop_back();
