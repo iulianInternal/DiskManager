@@ -3,7 +3,7 @@
 
 DirectoryEntry::DirectoryEntry()
 {
-	memcpy(this->name, "        ", 9);
+	memcpy(this->name, "\0       ", 9);
 	memcpy(this->extension, "   ", 4);
 	this->fileAttributes = 0;
 	this->userAttributes = 0;
