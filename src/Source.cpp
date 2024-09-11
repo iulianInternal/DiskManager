@@ -583,10 +583,7 @@ int main(int argc, char* argv[])
 					if (success == false)
 						continue;
 
-					firstPos = arguments[1].rfind('.');
-					if (firstPos != std::string::npos)
-						std::cout << "test";
-
+					bool isFile = false;
 					std::string namePath = path;
 					std::string directoryPath;
 					std::vector<unsigned int> exitStack;
@@ -612,8 +609,9 @@ int main(int argc, char* argv[])
 
 						std::string nameString = directoryEntry.GetName();
 						std::string extensionString = directoryEntry.GetExtension();
+						std::string nameWithExtensionString = nameString + "." + extensionString;
 
-						if (nameString == arguments[1] || exitStack.size() != 0)
+						if (nameString == arguments[1] || nameWithExtensionString == arguments[1] || exitStack.size() != 0)
 						{
 							if ((directoryEntry.fileAttributes & 0x10) == 0x10)
 							{
@@ -649,6 +647,8 @@ int main(int argc, char* argv[])
 							}
 							else
 							{
+								if (nameString == arguments[1])
+									isFile = true;
 								std::string nameFile = namePath;
 								if (arguments[2] == "")
 									nameFile.append(nameString).append(".").append(extensionString);
@@ -690,6 +690,8 @@ int main(int argc, char* argv[])
 								}
 								file.close();
 								std::cout << nameFile << std::endl;
+								if (isFile == true)
+									break;
 							}
 						}
 					}
@@ -1005,7 +1007,8 @@ int main(int argc, char* argv[])
 			std::cout << "dir - show current directory" << std::endl;
 			std::cout << "cd - change current directory" << std::endl;
 			std::cout << "copy <from> <to> - copies file or directory to specified directory" << std::endl;
-			std::cout << "                   To use the virtual disk drive, always specify root:\\\\ (see dir)" << std::endl;
+			std::cout << "                   To use the virtual disk drive, always specify root:\\\\," << std::endl;
+			std::cout << "                   even if it is used in relative path" << std::endl;
 			std::cout << "del <name> - delete file" << std::endl;
 			std::cout << "md <name> - make directory" << std::endl;
 			std::cout << "rd <name> - remove directory" << std::endl;
