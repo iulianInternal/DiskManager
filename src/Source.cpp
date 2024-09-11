@@ -510,12 +510,34 @@ int main(int argc, char* argv[])
 			if (arguments.size() == 3)
 			{
 				//If copying from img to disk
-#ifdef __linux__
-				if (arguments[2][0] == '/')
-#elif defined(_WIN32) || defined(_WIN64)
-				if (arguments[2][1] == ':')
-#endif
+				if (arguments[1].substr(0, 7) == "root://")
 				{
+					arguments[1].erase(0, 7);
+					for (int i = 0; i < arguments[1].length(); i++)
+					{
+						arguments[1][i] = std::toupper(arguments[1][i]);
+					}
+
+					//Create new folders (if they don't exist)
+					bool success = true;
+					size_t firstPos = arguments[2].find(FILESYSTEM_FOLDER_PATH_SYMBOL);
+
+					while (firstPos != std::string::npos || firstPos == arguments[2].length() - 1)
+					{
+						std::string folder = arguments[2].substr(0, firstPos);
+						if (!std::filesystem::exists(folder))
+						{
+							success = false;
+							std::cout << "Cannot create folder \"" << folder << "\"" << std::endl;
+							break;
+						}
+
+						arguments[2].erase(0, firstPos + 1);
+						firstPos = arguments[2].find('\\');
+					}
+					if (success == false)
+						continue;
+
 					std::string namePath = "";
 					std::string directoryPath;
 					std::vector<unsigned int> exitStack;
@@ -609,12 +631,9 @@ int main(int argc, char* argv[])
 					}
 				}
 				//If copying from disk to img
-#ifdef __linux__
-				if (arguments[1][0] == '/')
-#elif defined(_WIN32) || defined(_WIN64)
-				else if(arguments[1][1] == ':')
-#endif
+				if (arguments[2].substr(0, 7) == "root://")
 				{
+					arguments[2].erase(0, 7);
 					if (!std::filesystem::is_directory(arguments[1]))
 					{
 						std::string fileNameWithExtension = arguments[1];
@@ -922,7 +941,7 @@ int main(int argc, char* argv[])
 			std::cout << "dir - show current directory" << std::endl;
 			std::cout << "cd - change current directory" << std::endl;
 			std::cout << "copy <from> <to> - copies file or directory to specified directory" << std::endl;
-			std::cout << "                   By default, if you don't specify any drive, it will use the virtual disk drive." << std::endl;
+			std::cout << "                   To use the virtual disk drive, always specify root:// (see dir)" << std::endl;
 			std::cout << "del <name> - delete file" << std::endl;
 			std::cout << "md <name> - make directory" << std::endl;
 			std::cout << "rd <name> - remove directory" << std::endl;
