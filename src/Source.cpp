@@ -510,7 +510,7 @@ int main(int argc, char* argv[])
 			if (arguments.size() == 3)
 			{
 				//If copying from img to disk
-				if (arguments[1].substr(0, 7) == "root://")
+				if (arguments[1].substr(0, 7) == "root:\\\\")
 				{
 					arguments[1].erase(0, 7);
 					for (int i = 0; i < arguments[1].length(); i++)
@@ -519,26 +519,75 @@ int main(int argc, char* argv[])
 					}
 
 					//Create new folders (if they don't exist)
+					std::string path = "";
 					bool success = true;
 					size_t firstPos = arguments[2].find(FILESYSTEM_FOLDER_PATH_SYMBOL);
 
-					while (firstPos != std::string::npos || firstPos == arguments[2].length() - 1)
+					while ((firstPos != std::string::npos || firstPos == arguments[2].length() - 1) && arguments[2] != "")
 					{
 						std::string folder = arguments[2].substr(0, firstPos);
 						if (!std::filesystem::exists(folder))
 						{
-							success = false;
-							std::cout << "Cannot create folder \"" << folder << "\"" << std::endl;
-							break;
+							if (!std::filesystem::create_directory(folder))
+							{
+								success = false;
+								std::cout << "Cannot create folder \"" << folder << "\"" << std::endl;
+								break;
+							}
 						}
 
+						path.append(folder).append(1, FILESYSTEM_FOLDER_PATH_SYMBOL);
 						arguments[2].erase(0, firstPos + 1);
 						firstPos = arguments[2].find('\\');
 					}
 					if (success == false)
 						continue;
+					path.append(arguments[2]);
+					if (!std::filesystem::exists(path))
+					{
+						if (!std::filesystem::create_directory(path))
+						{
+							success = false;
+							std::cout << "Cannot create folder \"" << arguments[2] << "\"" << std::endl;
+							break;
+						}
+					}
 
-					std::string namePath = "";
+					//Get directory to copy from
+					success = true;
+					firstPos = arguments[1].find('\\');
+					DirectoryEntry directoryEntry;
+
+					while (firstPos != std::string::npos || firstPos == arguments[1].length() - 1)
+					{
+						directoryEntry = FindDirectoryEntry(&disk, (unsigned int)disk.tellg(), arguments[1].substr(0, firstPos));
+						if (directoryEntry.name[0] == 0)
+						{
+							std::cout << "Directory " << arguments[1].substr(0, firstPos) << " does not exist." << std::endl;
+							std::cout << std::endl;
+							success = false;
+							break;
+						}
+						if ((directoryEntry.fileAttributes & 0x10) != 0x10)
+						{
+							std::cout << arguments[1] << " is not a directory" << std::endl;
+							success = false;
+							break;
+						}
+						unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+						disk.seekg(directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory);
+
+						arguments[1].erase(0, firstPos + 1);
+						firstPos = arguments[2].find('\\');
+					}
+					if (success == false)
+						continue;
+
+					firstPos = arguments[1].rfind('.');
+					if (firstPos != std::string::npos)
+						std::cout << "test";
+
+					std::string namePath = path;
 					std::string directoryPath;
 					std::vector<unsigned int> exitStack;
 
@@ -566,13 +615,28 @@ int main(int argc, char* argv[])
 
 						if (nameString == arguments[1] || exitStack.size() != 0)
 						{
-							directoryPath = arguments[2];
-
 							if ((directoryEntry.fileAttributes & 0x10) == 0x10)
 							{
-								namePath.append(1, FILESYSTEM_FOLDER_PATH_SYMBOL).append(nameString);
-								directoryPath.append(namePath);
-								bool create = std::filesystem::create_directory(directoryPath);
+								if (exitStack.size() != 0)
+								{
+									if (arguments[2] == "")
+									{
+										namePath.append(nameString).append(1, FILESYSTEM_FOLDER_PATH_SYMBOL);
+									}
+									else
+									{
+										namePath.append(1, FILESYSTEM_FOLDER_PATH_SYMBOL).append(nameString);
+									}
+									directoryPath.append(namePath);
+									if (!std::filesystem::exists(directoryPath))
+									{
+										if (!std::filesystem::create_directory(directoryPath))
+										{
+											std::cout << "Cannot create folder \"" << directoryPath << "\"" << std::endl;
+											break;
+										}
+									}
+								}
 								std::cout << namePath << std::endl;
 								exitStack.push_back(disk.tellg());
 
@@ -585,11 +649,11 @@ int main(int argc, char* argv[])
 							}
 							else
 							{
-								std::string nameFileString = namePath;
-								nameFileString.append(1, FILESYSTEM_FOLDER_PATH_SYMBOL).append(nameString).append(".").append(extensionString);
-
-								std::string nameFile = directoryPath;
-								nameFile.append(nameFileString);
+								std::string nameFile = namePath;
+								if (arguments[2] == "")
+									nameFile.append(nameString).append(".").append(extensionString);
+								else
+									nameFile.append(1, FILESYSTEM_FOLDER_PATH_SYMBOL).append(nameString).append(".").append(extensionString);
 
 								std::ofstream file;
 								file.open(nameFile, std::ios_base::out | std::ios_base::binary);
@@ -625,13 +689,13 @@ int main(int argc, char* argv[])
 									disk.seekg(oldAddress);
 								}
 								file.close();
-								std::cout << nameFileString << std::endl;
+								std::cout << nameFile << std::endl;
 							}
 						}
 					}
 				}
 				//If copying from disk to img
-				if (arguments[2].substr(0, 7) == "root://")
+				if (arguments[2].substr(0, 7) == "root:\\\\")
 				{
 					arguments[2].erase(0, 7);
 					if (!std::filesystem::is_directory(arguments[1]))
@@ -941,7 +1005,7 @@ int main(int argc, char* argv[])
 			std::cout << "dir - show current directory" << std::endl;
 			std::cout << "cd - change current directory" << std::endl;
 			std::cout << "copy <from> <to> - copies file or directory to specified directory" << std::endl;
-			std::cout << "                   To use the virtual disk drive, always specify root:// (see dir)" << std::endl;
+			std::cout << "                   To use the virtual disk drive, always specify root:\\\\ (see dir)" << std::endl;
 			std::cout << "del <name> - delete file" << std::endl;
 			std::cout << "md <name> - make directory" << std::endl;
 			std::cout << "rd <name> - remove directory" << std::endl;
