@@ -50,12 +50,11 @@ DirectoryEntry::DirectoryEntry(std::string name, std::string extension, unsigned
 std::string DirectoryEntry::GetName()
 {
 	std::string nameString = (char*)this->name;
-	if (nameString.size() != 0)
+	while (nameString.back() == ' ')
 	{
-		while (nameString.back() == ' ')
-		{
-			nameString.pop_back();
-		}
+		nameString.pop_back();
+		if (nameString.size() == 0)
+			break;
 	}
 	return nameString;
 }
@@ -63,12 +62,11 @@ std::string DirectoryEntry::GetName()
 std::string DirectoryEntry::GetExtension()
 {
 	std::string extensionString = (char*)this->extension;
-	if (extensionString.size() == 0)
+	while (extensionString.back() == ' ')
 	{
-		while (extensionString.back() == ' ')
-		{
-			extensionString.pop_back();
-		}
+		extensionString.pop_back();
+		if (extensionString.size() == 0)
+			break;
 	}
 	return extensionString;
 }
