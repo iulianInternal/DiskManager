@@ -50,6 +50,176 @@ std::vector<std::string> getArgs(const char* args)
 	return arguments;
 }
 
+void copyFileToIMG(std::fstream* disk, std::string name, uintmax_t maxFileSize, unsigned int firstAddressOfFAT, unsigned int addressRegion, unsigned int logicalSectorPerCluster, unsigned int bytesPerLogicalSector, unsigned int offset)
+{
+	std::string fileNameWithExtension = name;
+	fileNameWithExtension.erase(0, fileNameWithExtension.rfind(FILESYSTEM_FOLDER_PATH_SYMBOL) + 1);
+	std::string fileName = fileNameWithExtension;
+	if (fileNameWithExtension.rfind(".") != std::string::npos)
+		fileName.erase(fileNameWithExtension.rfind("."));
+	std::string fileExtension = fileNameWithExtension;
+	if (fileNameWithExtension.rfind(".") != std::string::npos)
+		fileExtension.erase(0, fileNameWithExtension.rfind(".") + 1);
+	else
+		fileExtension = "   ";
+	fileName.resize(8, 0x20);
+	fileExtension.resize(3, 0x20);
+	for (int i = 0; i < 8; i++)
+	{
+		fileName[i] = fileName.length() > i ? std::toupper(fileName[i]) : 0x20;
+	}
+	for (int i = 0; i < 3; i++)
+	{
+		fileExtension[i] = fileExtension.length() > i ? std::toupper(fileExtension[i]) : 0x20;
+	}
+	std::ifstream file;
+	file.open(name, std::ios_base::in | std::ios_base::binary);
+	if (file.is_open())
+	{
+		unsigned int addressData = 0;
+		unsigned int oldAddress = disk->tellg();
+		unsigned int clusterStart = GetFreeCluster(disk, firstAddressOfFAT + offset);
+		addressData = addressRegion + (clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+		if (addressData + std::filesystem::file_size(name) >= maxFileSize)
+		{
+			std::cout << name << ": ran out of space!" << std::endl;
+			goto skip;
+		}
+		disk->seekg(addressData);
+		unsigned int clusterIndex = clusterStart;
+		unsigned char symbol;
+		int fileSize = 0;
+		while (true)
+		{
+			for (int i = 0; i < bytesPerLogicalSector * logicalSectorPerCluster; i++)
+			{
+				if (fileSize > maxFileSize)
+					break;
+				file.read((char*)&symbol, 1);
+				if (file.eof())
+					break;
+				disk->write((char*)&symbol, 1);
+				fileSize += 1;
+			}
+			if (fileSize > maxFileSize)
+				break;
+			if (file.eof())
+			{
+				WriteClusterChain(disk, firstAddressOfFAT + offset, clusterIndex, 0xFFF);
+				break;
+			}
+			WriteClusterChain(disk, firstAddressOfFAT + offset, clusterIndex, 0x001);
+			unsigned int freeClusterIndex = GetFreeCluster(disk, firstAddressOfFAT + offset);
+			WriteClusterChain(disk, firstAddressOfFAT + offset, clusterIndex, freeClusterIndex);
+			clusterIndex = freeClusterIndex;
+			addressData = addressRegion + (clusterIndex - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+			disk->seekg(addressData);
+		}
+		disk->seekg(oldAddress);
+		DirectoryEntry newFile = { fileName, fileExtension, (unsigned char)0x20, (unsigned char)0x00, (unsigned char)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)clusterStart, (unsigned int)fileSize };
+		WriteDirectoryTable(disk, newFile);
+	}
+	else
+	{
+		std::cout << "File was not found." << std::endl;
+	}
+skip:
+	file.close();
+}
+
+unsigned int createDirectory(std::fstream* disk, std::string name, unsigned int rootDirectory, unsigned int currentDirectory, unsigned int firstAddressOfFAT, unsigned int addressRegion, unsigned int logicalSectorPerCluster, unsigned int bytesPerLogicalSector, unsigned int offset)
+{
+	for (int i = 0; i < name.length(); i++)
+	{
+		name[i] = std::toupper(name[i]);
+	}
+
+	bool canCreate = true;
+	unsigned int freeSpace = 0;
+
+	bool found = true;
+	size_t firstPos = name.find('\\');
+
+	while (firstPos != std::string::npos)
+	{
+		DirectoryEntry directoryEntry = FindDirectoryEntry(disk, currentDirectory, name.substr(0, firstPos));
+		if (directoryEntry.name[0] == 0)
+		{
+			std::cout << "Directory " << name.substr(0, firstPos) << " does not exist." << std::endl;
+			std::cout << std::endl;
+			found = false;
+			break;
+		}
+		else
+		{
+			unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+			disk->seekg(directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory);
+		}
+		name.erase(0, firstPos + 1);
+		firstPos = name.find('\\');
+	}
+	if (found == false)
+		return 0;
+
+	unsigned int previousCluster = (unsigned int)disk->tellg() != rootDirectory ? ((unsigned int)disk->tellg() - addressRegion) / bytesPerLogicalSector / logicalSectorPerCluster + 2 : 0;
+
+	while (true)
+	{
+		DirectoryEntry directoryEntry = ReadDirectoryEntry(disk);
+
+		if ((unsigned char)directoryEntry.name[0] == 0)
+		{
+			if (freeSpace == 0)
+				freeSpace = (unsigned int)disk->tellg() - 32;
+			break;
+		}
+		else if ((unsigned char)directoryEntry.name[0] == 0xE5)
+		{
+			if (freeSpace == 0)
+				freeSpace = (unsigned int)disk->tellg() - 32;
+			continue;
+		}
+
+		std::string nameString = directoryEntry.GetName();
+		std::string extensionString = directoryEntry.GetExtension();
+
+		if (nameString == name)
+		{
+			if ((directoryEntry.fileAttributes & 0x10) == 0x10)
+				std::cout << "Directory already exists." << std::endl;
+			else
+				std::cout << "Cannot create directory, choose different name." << std::endl;
+			canCreate = false;
+			break;
+		}
+	}
+	unsigned int addressData = 0;
+	if (canCreate == true && freeSpace != 0)
+	{
+		unsigned int freeCluster = GetFreeCluster(disk, firstAddressOfFAT);
+		disk->seekg(freeSpace);
+		DirectoryEntry newDirectory = { name, "   ", (unsigned char)0x10, (unsigned char)0x00, (unsigned char)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)freeCluster, 0x00 };
+		WriteDirectoryTable(disk, newDirectory);
+
+		WriteClusterChain(disk, firstAddressOfFAT + offset, freeCluster, 0xFFF);
+
+		addressData = addressRegion + (freeCluster - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+
+		disk->seekg(addressData);
+
+		DirectoryEntry newCurrentDirectory = { ".", "   ", (unsigned char)0x10, (unsigned char)0x00, (unsigned char)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)freeCluster, (unsigned int)0x00 };
+		DirectoryEntry newParentDirectory = { "..", "   ", (unsigned char)0x10, (unsigned char)0x00, (unsigned char)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)previousCluster, (unsigned int)0x00 };
+		WriteDirectoryTable(disk, newCurrentDirectory);
+		WriteDirectoryTable(disk, newParentDirectory);
+	}
+	else if (freeSpace == 0)
+	{
+		std::cout << name << ": out of space!" << std::endl;
+	}
+	//disk->seekg(currentDirectory);
+	return addressData;
+}
+
 int main(int argc, char* argv[])
 {
 	std::cout << "Disk manager 0.1.1\r\n(c) iulianInternal 2024" << std::endl;
@@ -518,6 +688,8 @@ int main(int argc, char* argv[])
 						arguments[1][i] = std::toupper(arguments[1][i]);
 					}
 
+					disk.seekg(rootDirectory);
+
 					//Create new folders (if they don't exist)
 					std::string path = "";
 					bool success = true;
@@ -700,126 +872,113 @@ int main(int argc, char* argv[])
 				if (arguments[2].substr(0, 7) == "root:\\\\")
 				{
 					arguments[2].erase(0, 7);
+					for (int i = 0; i < arguments[2].length(); i++)
+					{
+						arguments[2][i] = std::toupper(arguments[2][i]);
+					}
+
+					disk.seekg(rootDirectory);
+
+					bool success = true;
+					std::string path = arguments[1];
+					size_t firstPos = path.find('\\');
+
+					while (firstPos != std::string::npos || firstPos == arguments[1].length() - 1)
+					{
+						std::string folder = arguments[1].substr(0, firstPos);
+						if (!std::filesystem::exists(folder))
+						{
+							std::cout << "Directory \"" << folder << "\" does not exist." << std::endl;
+							std::cout << std::endl;
+							success = false;
+							break;
+						}
+
+						path.erase(0, firstPos + 1);
+						firstPos = path.find('\\');
+					}
+					if (success == false)
+						continue;
+					if (!std::filesystem::exists(arguments[1]))
+					{
+						std::cout << "File or directory \"" << arguments[1] << "\" does not exist." << std::endl;
+						std::cout << std::endl;
+						continue;
+					}
+
+					//Get directory to copy from
+					success = true;
+					firstPos = arguments[2].find('\\');
+					DirectoryEntry directoryEntry;
+
+					while (firstPos != std::string::npos || (firstPos == arguments[2].length() - 1 && arguments[2] != ""))
+					{
+						directoryEntry = FindDirectoryEntry(&disk, (unsigned int)disk.tellg(), arguments[1].substr(0, firstPos));
+						if (directoryEntry.name[0] == 0)
+						{
+							std::cout << "Directory \"" << arguments[2].substr(0, firstPos) << "\" does not exist." << std::endl;
+							std::cout << std::endl;
+							success = false;
+							break;
+						}
+						if ((directoryEntry.fileAttributes & 0x10) != 0x10)
+						{
+							std::cout << arguments[2] << " is not a directory" << std::endl;
+							std::cout << std::endl;
+							success = false;
+							break;
+						}
+						unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
+						disk.seekg(directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory);
+
+						arguments[2].erase(0, firstPos + 1);
+						firstPos = arguments[2].find('\\');
+					}
+					if (success == false)
+						continue;
+
 					if (!std::filesystem::is_directory(arguments[1]))
 					{
-						std::string fileNameWithExtension = arguments[1];
-						fileNameWithExtension.erase(0, fileNameWithExtension.rfind(FILESYSTEM_FOLDER_PATH_SYMBOL) + 1);
-						std::string fileName = fileNameWithExtension;
-						if (fileNameWithExtension.rfind(".") != std::string::npos)
-							fileName.erase(fileNameWithExtension.rfind("."));
-						std::string fileExtension = fileNameWithExtension;
-						if (fileNameWithExtension.rfind(".") != std::string::npos)
-							fileExtension.erase(0, fileNameWithExtension.rfind(".") + 1);
-						else
-							fileExtension = "   ";
-						fileName.resize(8, 0x20);
-						fileExtension.resize(3, 0x20);
-						for (int i = 0; i < 8; i++)
-						{
-							fileName[i] = fileName.length() > i ? std::toupper(fileName[i]) : 0x20;
-						}
-						for (int i = 0; i < 3; i++)
-						{
-							fileExtension[i] = fileExtension.length() > i ? std::toupper(fileExtension[i]) : 0x20;
-						}
-						std::ifstream file;
-						file.open(arguments[1], std::ios_base::in | std::ios_base::binary);
-						if (file.is_open())
-						{
-							unsigned int addressData = 0;
-							bool foundFolder = true;
-							std::string folders = arguments[2];
-							while (true)
-							{
-								if (folders.find("\\") == std::string::npos)
-								{
-									DirectoryEntry directoryEntry = ReadDirectoryEntry(&disk);
-									if ((unsigned char)directoryEntry.name[0] == 0xE5 || (unsigned char)directoryEntry.name[0] == 0x00)
-									{
-										disk.seekg((unsigned int)disk.tellg() - 32);
-										break;
-									}
-								}
-								else
-								{
-									std::string folderName = folders.substr(0, folders.find("\\"));
-									folderName.resize(8, 0x20);
-									for (int i = 0; i < 8; i++)
-									{
-										folderName[i] = folderName.length() > i ? std::toupper(folderName[i]) : 0x20;
-									}
-									DirectoryEntry directoryEntry = ReadDirectoryEntry(&disk);
-									if ((char*)directoryEntry.name == folderName)
-									{
-										addressData = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
-										disk.seekg(addressData);
-										folders.erase(0, folders.find("\\") + 1);
-									}
-									else if ((unsigned char)directoryEntry.name[0] == 0xE5 || (unsigned char)directoryEntry.name[0] == 0x00)
-									{
-										disk.seekg((unsigned int)disk.tellg() - 32);
-										foundFolder = false;
-										break;
-									}
-								}
-							}
-							if (foundFolder == false)
-								goto skip;
-							unsigned int oldAddress = disk.tellg();
-							unsigned int clusterStart = GetFreeCluster(&disk, firstAddressOfFAT + offset);
-							addressData = addressRegion + (clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
-							if (addressData+std::filesystem::file_size(arguments[1]) >= maxFileSize)
-							{
-								std::cout << "Ran out of space!" << std::endl;
-								goto skip;
-							}
-							disk.seekg(addressData);
-							unsigned int clusterIndex = clusterStart;
-							unsigned char symbol;
-							int fileSize = 0;
-							while (true)
-							{
-								for (int i = 0;i < bytesPerLogicalSector * logicalSectorPerCluster;i++)
-								{
-									if (fileSize > std::filesystem::file_size(argv[1]))
-										break;
-									file.read((char*)&symbol, 1);
-									if (file.eof())
-										break;
-									disk.write((char*)&symbol, 1);
-									fileSize += 1;
-								}
-								if (fileSize > std::filesystem::file_size(argv[1]))
-									break;
-								if (file.eof())
-								{
-									WriteClusterChain(&disk, firstAddressOfFAT + offset, clusterIndex, 0xFFF);
-									break;
-								}
-								WriteClusterChain(&disk, firstAddressOfFAT + offset, clusterIndex, 0x001);
-								unsigned int freeClusterIndex = GetFreeCluster(&disk, firstAddressOfFAT + offset);
-								WriteClusterChain(&disk, firstAddressOfFAT + offset, clusterIndex, freeClusterIndex);
-								clusterIndex = freeClusterIndex;
-								addressData = addressRegion + (clusterIndex - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
-								disk.seekg(addressData);
-							}
-							disk.seekg(oldAddress);
-							DirectoryEntry newFile = { fileName, fileExtension, (unsigned char)0x20, (unsigned char)0x00, (unsigned char)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)clusterStart, (unsigned int)fileSize };
-							WriteDirectoryTable(&disk, newFile);
-						}
-						else
-						{
-							std::cout << "File was not found." << std::endl;
-						}
-					skip:
-						file.close();
+						copyFileToIMG(&disk, arguments[1], maxFileSize, firstAddressOfFAT, addressRegion, logicalSectorPerCluster, bytesPerLogicalSector, offset);
 					}
 					else
 					{
+						unsigned int startDirectory = 0;
+						if (arguments[2] != "")
+							startDirectory = createDirectory(&disk, arguments[2], rootDirectory, currentDirectory, firstAddressOfFAT, addressRegion, logicalSectorPerCluster, bytesPerLogicalSector, offset);
+						else
+							startDirectory = createDirectory(&disk, arguments[1], rootDirectory, currentDirectory, firstAddressOfFAT, addressRegion, logicalSectorPerCluster, bytesPerLogicalSector, offset);
+
 						std::filesystem::recursive_directory_iterator files(arguments[1]);
 						for (std::filesystem::recursive_directory_iterator i(arguments[1]); std::filesystem::begin(i) != std::filesystem::end(files); i++)
 						{
+							std::string path = i->path().u8string();
+							if (i->is_directory())
+							{
+								path.erase(0, path.find(FILESYSTEM_FOLDER_PATH_SYMBOL) + 1);
+								disk.seekg(startDirectory);
+								firstPos = path.find(FILESYSTEM_FOLDER_PATH_SYMBOL);
+								do
+								{
+									unsigned int currentAddress = (unsigned int)disk.tellg();
+									unsigned int addressDirectory = 0;
+									DirectoryEntry folder = FindDirectoryEntry(&disk, startDirectory, path.substr(0, firstPos));
+									if (folder.name[0] == 0)
+									{
+										disk.seekg(currentAddress);
+										addressDirectory = createDirectory(&disk, path.substr(0, firstPos), rootDirectory, startDirectory, firstAddressOfFAT, addressRegion, logicalSectorPerCluster, bytesPerLogicalSector, offset);
+									}
+									//disk.seekg(addressDirectory);
 
+									path.erase(0, firstPos + 1);
+									firstPos = path.find(FILESYSTEM_FOLDER_PATH_SYMBOL);
+								}
+								while (firstPos != std::string::npos);
+							}
+							else
+							{
+								copyFileToIMG(&disk, path, maxFileSize, firstAddressOfFAT, addressRegion, logicalSectorPerCluster, bytesPerLogicalSector, offset);
+							}
 						}
 					}
 				}
@@ -855,92 +1014,7 @@ int main(int argc, char* argv[])
 		{
 			if (arguments.size() == 2)
 			{
-				bool canCreate = true;
-				unsigned int freeSpace = 0;
-
-				for (int i = 0; i < arguments[1].length(); i++)
-				{
-					arguments[1][i] = std::toupper(arguments[1][i]);
-				}
-
-				bool found = true;
-				size_t firstPos = arguments[1].find('\\');
-
-				while (firstPos != std::string::npos)
-				{
-					DirectoryEntry directoryEntry = FindDirectoryEntry(&disk, currentDirectory, arguments[1].substr(0, firstPos));
-					if (directoryEntry.name[0] == 0)
-					{
-						std::cout << "Directory " << arguments[1].substr(0, firstPos) << " does not exist." << std::endl;
-						std::cout << std::endl;
-						found = false;
-						break;
-					}
-					else
-					{
-						unsigned int addressDirectory = addressRegion + (directoryEntry.clusterStart - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
-						disk.seekg(directoryEntry.clusterStart != 0 ? addressDirectory : rootDirectory);
-					}
-					arguments[1].erase(0, firstPos+1);
-					firstPos = arguments[1].find('\\');
-				}
-				if (found == false)
-					continue;
-
-				unsigned int previousCluster = (unsigned int)disk.tellg() != rootDirectory ? ((unsigned int)disk.tellg() - addressRegion) / bytesPerLogicalSector / logicalSectorPerCluster + 2 : 0;
-
-				while (true)
-				{
-					DirectoryEntry directoryEntry = ReadDirectoryEntry(&disk);
-
-					if ((unsigned char)directoryEntry.name[0] == 0)
-					{
-						if (freeSpace == 0)
-							freeSpace = (unsigned int)disk.tellg() - 32;
-						break;
-					}
-					else if ((unsigned char)directoryEntry.name[0] == 0xE5)
-					{
-						if (freeSpace == 0)
-							freeSpace = (unsigned int)disk.tellg() - 32;
-						continue;
-					}
-
-					std::string nameString = directoryEntry.GetName();
-					std::string extensionString = directoryEntry.GetExtension();
-
-					if (nameString == arguments[1])
-					{
-						if ((directoryEntry.fileAttributes & 0x10) == 0x10)
-							std::cout << "Directory already exists." << std::endl;
-						else
-							std::cout << "Cannot create directory, choose different name." << std::endl;
-						canCreate = false;
-						break;
-					}
-				}
-				if (canCreate == true && freeSpace != 0)
-				{
-					unsigned int freeCluster = GetFreeCluster(&disk, firstAddressOfFAT);
-					disk.seekg(freeSpace);
-					DirectoryEntry newDirectory = { arguments[1], "   ", (unsigned char)0x10, (unsigned char)0x00, (unsigned char)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)freeCluster, 0x00};
-					WriteDirectoryTable(&disk, newDirectory);
-
-					WriteClusterChain(&disk, firstAddressOfFAT + offset, freeCluster, 0xFFF);
-
-					unsigned int addressData = addressRegion + (freeCluster - 2) * logicalSectorPerCluster * bytesPerLogicalSector;
-
-					disk.seekg(addressData);
-
-					DirectoryEntry newCurrentDirectory = { ".", "   ", (unsigned char)0x10, (unsigned char)0x00, (unsigned char)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)freeCluster, (unsigned int)0x00 };
-					DirectoryEntry newParentDirectory = { "..", "   ", (unsigned char)0x10, (unsigned char)0x00, (unsigned char)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)0x00, (unsigned short)previousCluster, (unsigned int)0x00 };
-					WriteDirectoryTable(&disk, newCurrentDirectory);
-					WriteDirectoryTable(&disk, newParentDirectory);
-				}
-				else if (freeSpace == 0)
-				{
-					std::cout << "Out of space!" << std::endl;
-				}
+				createDirectory(&disk, arguments[1], rootDirectory, currentDirectory, firstAddressOfFAT, addressRegion, logicalSectorPerCluster, bytesPerLogicalSector, offset);
 			}
 		}
 		else if (arguments[0] == "rd")
@@ -1007,8 +1081,7 @@ int main(int argc, char* argv[])
 			std::cout << "dir - show current directory" << std::endl;
 			std::cout << "cd - change current directory" << std::endl;
 			std::cout << "copy <from> <to> - copies file or directory to specified directory" << std::endl;
-			std::cout << "                   To use the virtual disk drive, always specify root:\\\\," << std::endl;
-			std::cout << "                   even if it is used in relative path" << std::endl;
+			std::cout << "                   To use the virtual disk drive, always specify \"root:\\\\\"" << std::endl;
 			std::cout << "del <name> - delete file" << std::endl;
 			std::cout << "md <name> - make directory" << std::endl;
 			std::cout << "rd <name> - remove directory" << std::endl;
