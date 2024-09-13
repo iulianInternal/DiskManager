@@ -913,13 +913,19 @@ int main(int argc, char* argv[])
 
 					while (firstPos != std::string::npos || (firstPos == arguments[2].length() - 1 && arguments[2] != ""))
 					{
-						directoryEntry = FindDirectoryEntry(&disk, (unsigned int)disk.tellg(), arguments[1].substr(0, firstPos));
+						unsigned int currentAddress = (unsigned int)disk.tellg();
+						directoryEntry = FindDirectoryEntry(&disk, (unsigned int)disk.tellg(), arguments[2].substr(0, firstPos));
+						disk.seekg(currentAddress);
 						if (directoryEntry.name[0] == 0)
 						{
-							std::cout << "Directory \"" << arguments[2].substr(0, firstPos) << "\" does not exist." << std::endl;
-							std::cout << std::endl;
-							success = false;
-							break;
+							if (createDirectory(&disk, arguments[2].substr(0, firstPos), rootDirectory, currentAddress, firstAddressOfFAT, addressRegion, logicalSectorPerCluster, bytesPerLogicalSector, offset) == 0)
+							{
+								success = false;
+								break;
+							}
+							arguments[2].erase(0, firstPos + 1);
+							firstPos = arguments[2].find('\\');
+							continue;
 						}
 						if ((directoryEntry.fileAttributes & 0x10) != 0x10)
 						{
