@@ -8,6 +8,9 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### New features:
 - Added command "rd".
 - Added constructors to DirectoryEntry.
+- Added support to copy folder from disk to img.
+- When you specify path to copy to that does not exist, it will create it, if it is possible.
+- Added functions: copyFileToIMG; createDirectory.
 
 ### Changes:
 - DirectoryEntry::name and DirectoryEntry::extension are unsigned char now, previously they were std::string.
