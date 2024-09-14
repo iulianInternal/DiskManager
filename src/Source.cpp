@@ -911,8 +911,10 @@ int main(int argc, char* argv[])
 					firstPos = arguments[2].find('\\');
 					DirectoryEntry directoryEntry;
 
-					while (firstPos != std::string::npos || (firstPos == arguments[2].length() - 1 && arguments[2] != ""))
+					do
 					{
+						if (arguments[2] == "")
+							break;
 						unsigned int currentAddress = (unsigned int)disk.tellg();
 						directoryEntry = FindDirectoryEntry(&disk, (unsigned int)disk.tellg(), arguments[2].substr(0, firstPos));
 						disk.seekg(currentAddress);
@@ -940,11 +942,21 @@ int main(int argc, char* argv[])
 						arguments[2].erase(0, firstPos + 1);
 						firstPos = arguments[2].find('\\');
 					}
+					while (firstPos != std::string::npos);
 					if (success == false)
 						continue;
 
 					if (!std::filesystem::is_directory(arguments[1]))
 					{
+						while (true)
+						{
+							DirectoryEntry directoryEntry = ReadDirectoryEntry(&disk);
+							if (directoryEntry.name[0] == 0 || directoryEntry.name[0] == 0xE5)
+							{
+								disk.seekg((unsigned int)disk.tellg() - 32);
+								break;
+							}
+						}
 						copyFileToIMG(&disk, arguments[1], maxFileSize, firstAddressOfFAT, addressRegion, logicalSectorPerCluster, bytesPerLogicalSector, offset);
 					}
 					else
