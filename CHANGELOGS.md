@@ -6,11 +6,11 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## DiskManager Unreleased - N/A Commit: N/A
 
 ### New features:
-- Added command "rd".
+- Added new commands: "rd"; "del".
 - Added constructors to DirectoryEntry.
 - Added support to copy folder from disk to img.
 - When you specify path to copy to that does not exist, it will create it, if it is possible.
-- Added functions: copyFileToIMG; createDirectory.
+- Added functions: `copyFileToIMG`; `createDirectory`.
 
 ### Changes:
 - DirectoryEntry::name and DirectoryEntry::extension are unsigned char now, previously they were std::string.
