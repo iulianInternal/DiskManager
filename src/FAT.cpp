@@ -178,7 +178,7 @@ unsigned int GetClusterChain(std::fstream* disk, unsigned int firstAddressOfFAT,
 	if (cluster % 2 == 0)
 		result = ((bytes[1] << 8) + bytes[0]) & 0xFFF;
 	else
-		result = ((bytes[1] << 8) + bytes[0]) << 4;
+		result = ((bytes[1] << 8) + bytes[0]) >> 4;
 	disk->seekg(oldAddress);
 	return result;
 }
