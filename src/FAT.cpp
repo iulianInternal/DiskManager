@@ -1,4 +1,5 @@
 #include "FAT.h"
+#include <cstring>
 #include <fstream>
 
 DirectoryEntry::DirectoryEntry()
