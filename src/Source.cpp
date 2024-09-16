@@ -772,6 +772,8 @@ int main(int argc, char* argv[])
 							{
 								disk.seekg(exitStack[exitStack.size() - 1]);
 								exitStack.pop_back();
+								if (exitStack.size() == 0)
+									break;
 								namePath.erase(namePath.rfind("\\"));
 								continue;
 							}
