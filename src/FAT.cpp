@@ -249,8 +249,10 @@ DirectoryEntry FindDirectoryEntry(std::fstream* disk, unsigned int currentDirect
 			if (extensionString.size() == 0)
 				break;
 		}
+		std::string nameWithExtensionString = nameString;
+		nameWithExtensionString.append(1, '.').append(extensionString);
 
-		if (nameString == name)
+		if (nameString == name || nameWithExtensionString == name)
 		{
 			newDirectoryEntry = directoryEntry;
 			break;
