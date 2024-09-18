@@ -3,7 +3,8 @@
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 -----------------------------------------------------------------------------------------------------
-## DiskManager Unreleased - N/A Commit: N/A
+## DiskManager 0.2.0 - 2024-09-18 Commit: N/A
+New release with new commands and command improvements.
 
 ### New features:
 - Added new commands: "rd"; "del".

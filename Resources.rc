@@ -1,7 +1,7 @@
 ID_ICON1 ICON "assets/DiskManager.ico"
 1 VERSIONINFO
- FILEVERSION 0,1,1,0
- PRODUCTVERSION 0,1,1,0
+ FILEVERSION 0,2,0,0
+ PRODUCTVERSION 0,2,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -17,13 +17,13 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "FileDescription", "A program that allows to read/write raw image files of a diskette."
-            VALUE "FileVersion", "0.1.1.0"
+            VALUE "FileVersion", "0.2.0.0"
             VALUE "InternalName", "DiskManager.exe"
             VALUE "LegalCopyright", "Copyright (C) 2024 iulianInternal"
             VALUE "CompanyName", "iulianInternal"
             VALUE "OriginalFilename", "DiskMgr.exe"
             VALUE "ProductName", "DiskManager"
-            VALUE "ProductVersion", "0.1.1"
+            VALUE "ProductVersion", "0.2.0"
         END
     END
     BLOCK "VarFileInfo"

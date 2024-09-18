@@ -222,7 +222,7 @@ unsigned int createDirectory(std::fstream* disk, std::string name, unsigned int 
 
 int main(int argc, char* argv[])
 {
-	std::cout << "Disk manager 0.1.1\r\n(c) iulianInternal 2024" << std::endl;
+	std::cout << "Disk manager 0.2.0\r\n(c) iulianInternal 2024" << std::endl;
 	std::cout << std::endl;
 
 	if (argc < 2)
