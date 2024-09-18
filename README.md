@@ -31,7 +31,7 @@ List of well known C++ compilers:
 |---------|----|
 |&check;|[msvc++](https://visualstudio.microsoft.com/)|
 |&check;|[g++](https://gcc.gnu.org/)|
-|&cross;|[clang](https://clang.llvm.org/)|
+|&check;|[clang](https://clang.llvm.org/)|
 |&check;|[mingw-w64](https://www.mingw-w64.org/)|
 
 You also need a [**CMake**](https://cmake.org/) to build and compile a project.
